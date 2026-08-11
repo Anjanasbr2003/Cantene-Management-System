@@ -1,0 +1,13 @@
+{
+  "name": "canteen-management-system",
+  "version": "1.0.0",
+  "description": "Smart Canteen Management System with Sci-Fi UI and Real-Time Kitchen Display",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:client": "cd client && npm run build",
+    "start": "cd server && npm start"
+  }
+}
