@@ -202,10 +202,7 @@ export const OrderTracking = () => {
   return (
     <div 
       style={{ 
-        backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.90), rgba(245, 245, 247, 0.94)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&auto=format&fit=crop&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundColor: 'var(--color-canvas)',
         minHeight: 'calc(100vh - 96px)',
         paddingBottom: 64
       }}
@@ -214,7 +211,7 @@ export const OrderTracking = () => {
       {/* Header Bar */}
       <section 
         style={{ 
-          backgroundColor: 'rgba(245, 245, 247, 0.85)', 
+          backgroundColor: 'var(--color-canvas-parchment)', 
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           padding: '48px 24px 36px 24px', 
@@ -281,9 +278,10 @@ export const OrderTracking = () => {
             <div 
               className="store-utility-card" 
               style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.94)', 
+                backgroundColor: 'var(--color-surface-pearl)', 
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid var(--color-hairline)',
                 padding: 32 
               }}
             >
@@ -347,9 +345,10 @@ export const OrderTracking = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backgroundColor: isDone || isCurrent ? 'var(--color-primary)' : '#f5f5f7',
-                            color: isDone || isCurrent ? '#ffffff' : '#7a7a7a',
-                            boxShadow: isCurrent ? '0 0 0 4px rgba(0, 102, 204, 0.2)' : 'none',
+                            backgroundColor: isDone || isCurrent ? 'var(--color-primary)' : 'var(--color-canvas-parchment)',
+                            border: isDone || isCurrent ? 'none' : '1px solid var(--color-hairline)',
+                            color: isDone || isCurrent ? '#ffffff' : 'var(--color-ink-muted-48)',
+                            boxShadow: isCurrent ? '0 0 0 4px rgba(41, 151, 255, 0.25)' : 'none',
                             transition: 'all 0.3s ease',
                             marginBottom: 10
                           }}
@@ -376,7 +375,7 @@ export const OrderTracking = () => {
               {/* Status Callout Card */}
               <div
                 style={{
-                  backgroundColor: 'rgba(245, 245, 247, 0.8)',
+                  backgroundColor: 'var(--color-canvas-parchment)',
                   borderRadius: 'var(--r-md)',
                   padding: 20,
                   display: 'flex',
@@ -437,9 +436,10 @@ export const OrderTracking = () => {
             <div 
               className="store-utility-card" 
               style={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.94)', 
+                backgroundColor: 'var(--color-surface-pearl)', 
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
+                border: '1px solid var(--color-hairline)',
                 padding: 32, 
                 display: 'flex', 
                 flexDirection: 'column', 

@@ -100,10 +100,7 @@ export const TableQRView = () => {
   return (
     <div 
       style={{ 
-        backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.88), rgba(245, 245, 247, 0.94)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&auto=format&fit=crop&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundColor: 'var(--color-canvas)',
         minHeight: 'calc(100vh - 96px)',
         paddingBottom: 64
       }}
@@ -112,7 +109,7 @@ export const TableQRView = () => {
       {/* Header Bar with Glassmorphic Backdrop */}
       <section 
         style={{ 
-          backgroundColor: 'rgba(245, 245, 247, 0.85)', 
+          backgroundColor: 'var(--color-canvas-parchment)', 
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           padding: '48px 24px 36px 24px', 
@@ -233,24 +230,26 @@ export const TableQRView = () => {
                   <div
                     onClick={() => setActiveModalTable(tbl)}
                     style={{
-                      backgroundColor: 'rgba(245, 245, 247, 0.8)',
+                      backgroundColor: 'var(--color-canvas-parchment)',
                       borderRadius: 'var(--r-md)',
-                      padding: 20,
+                      padding: 16,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 20,
+                      gap: 16,
                       cursor: 'pointer',
                       border: '1px solid var(--color-hairline)'
                     }}
                   >
-                    <QRCodeSVG
-                      value={`http://localhost:3000/menu?table=${tbl.number}`}
-                      size={80}
-                      bgColor="#ffffff"
-                      fgColor="#1d1d1f"
-                      level="M"
-                    />
+                    <div style={{ backgroundColor: '#ffffff', padding: 6, borderRadius: 'var(--r-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <QRCodeSVG
+                        value={`http://localhost:3000/menu?table=${tbl.number}`}
+                        size={72}
+                        bgColor="#ffffff"
+                        fgColor="#1d1d1f"
+                        level="M"
+                      />
+                    </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 4 }}>
                         {tbl.status === 'Occupied' ? `Active: ${tbl.occupantName || 'Diner'}` : tbl.status === 'Reserved' ? `Reserved: ${tbl.reservedFor}` : 'Ready for Diner'}

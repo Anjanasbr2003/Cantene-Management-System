@@ -139,10 +139,7 @@ export const AdminDashboard = () => {
   return (
     <div 
       style={{ 
-        backgroundImage: `linear-gradient(rgba(245, 245, 247, 0.90), rgba(255, 255, 255, 0.94)), url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundColor: 'var(--color-canvas)',
         minHeight: 'calc(100vh - 96px)',
         paddingBottom: 64
       }}
@@ -151,7 +148,7 @@ export const AdminDashboard = () => {
       {/* Header Bar */}
       <section 
         style={{ 
-          backgroundColor: 'rgba(245, 245, 247, 0.85)', 
+          backgroundColor: 'var(--color-canvas-parchment)', 
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           padding: '48px 24px 36px 24px', 
@@ -197,7 +194,7 @@ export const AdminDashboard = () => {
         {/* Metric Cards Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
           
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 24 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
             <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Daily Gross Revenue</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               ${currentMetrics.totalRevenue?.toFixed(2)}
@@ -207,7 +204,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 24 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
             <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Total Orders Placed</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.totalOrders}
@@ -217,7 +214,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 24 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
             <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Active Diners</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.activeCustomers}
@@ -227,7 +224,7 @@ export const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 24 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
             <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Avg Kitchen Prep Speed</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.avgPrepTimeMinutes}m
@@ -242,7 +239,7 @@ export const AdminDashboard = () => {
         {/* Recharts Analytics Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 32, marginBottom: 48 }}>
           
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 28 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 28 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 20 }}>
               Hourly Revenue Rush Telemetry
             </h3>
@@ -252,14 +249,14 @@ export const AdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-hairline)" />
                   <XAxis dataKey="hour" stroke="var(--color-ink-muted-48)" fontSize={12} />
                   <YAxis stroke="var(--color-ink-muted-48)" fontSize={12} />
-                  <RechartsTooltip />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--color-surface-pearl)', borderColor: 'var(--color-hairline)', color: 'var(--color-ink)', borderRadius: 8 }} />
                   <Line type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={3} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 28 }}>
+          <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 28 }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 20 }}>
               Category Sales Volume
             </h3>
@@ -269,7 +266,7 @@ export const AdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-hairline)" />
                   <XAxis dataKey="category" stroke="var(--color-ink-muted-48)" fontSize={12} />
                   <YAxis stroke="var(--color-ink-muted-48)" fontSize={12} />
-                  <RechartsTooltip />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--color-surface-pearl)', borderColor: 'var(--color-hairline)', color: 'var(--color-ink)', borderRadius: 8 }} />
                   <Bar dataKey="sales" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -279,7 +276,7 @@ export const AdminDashboard = () => {
         </div>
 
         {/* Menu Manager Section */}
-        <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', padding: 32 }}>
+        <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--color-ink)' }}>

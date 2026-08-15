@@ -201,10 +201,7 @@ export const StaffDashboard = () => {
   return (
     <div 
       style={{ 
-        backgroundImage: `linear-gradient(rgba(245, 245, 247, 0.90), rgba(255, 255, 255, 0.94)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1600&auto=format&fit=crop&q=80')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
+        backgroundColor: 'var(--color-canvas)',
         minHeight: 'calc(100vh - 96px)',
         paddingBottom: 64
       }}
@@ -213,7 +210,7 @@ export const StaffDashboard = () => {
       {/* Header Bar */}
       <section 
         style={{ 
-          backgroundColor: 'rgba(245, 245, 247, 0.85)', 
+          backgroundColor: 'var(--color-canvas-parchment)', 
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           padding: '48px 24px 36px 24px', 
@@ -285,7 +282,7 @@ export const StaffDashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
             
             {/* Column 1: Received */}
-            <div className="store-utility-card" style={{ backgroundColor: 'rgba(245, 245, 247, 0.92)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
+            <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-ink)' }}>
                   1. RECEIVED NEW ({ordersByStatus.Received.length})
@@ -300,7 +297,7 @@ export const StaffDashboard = () => {
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={{ backgroundColor: '#ffffff', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
+                    style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-ink)' }}>{order.id}</span>
@@ -329,9 +326,9 @@ export const StaffDashboard = () => {
             </div>
 
             {/* Column 2: Preparing */}
-            <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 248, 230, 0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255, 149, 0, 0.2)' }}>
+            <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255, 149, 0, 0.35)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <span className="caption-strong" style={{ color: '#b25000' }}>
+                <span className="caption-strong" style={{ color: 'var(--color-warning)' }}>
                   2. IN PREPARATION ({ordersByStatus.Preparing.length})
                 </span>
                 <span className="chip chip-amber" style={{ fontSize: 11 }}>Cooking</span>
@@ -344,11 +341,11 @@ export const StaffDashboard = () => {
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={{ backgroundColor: '#ffffff', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
+                    style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-ink)' }}>{order.id}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#b25000' }}>~{order.estimatedPrepMinutes || 8} min remaining</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>~{order.estimatedPrepMinutes || 8} min remaining</span>
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--color-ink-muted-80)', marginBottom: 12 }}>Diner: {order.customerName} • {order.tableNumber || 'Takeaway'}</div>
 
@@ -373,9 +370,9 @@ export const StaffDashboard = () => {
             </div>
 
             {/* Column 3: Ready */}
-            <div className="store-utility-card" style={{ backgroundColor: 'rgba(235, 247, 238, 0.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(52, 199, 89, 0.2)' }}>
+            <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid rgba(52, 199, 89, 0.35)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <span className="caption-strong" style={{ color: '#248a3d' }}>
+                <span className="caption-strong" style={{ color: 'var(--color-success)' }}>
                   3. READY FOR PICKUP ({ordersByStatus.Ready.length})
                 </span>
                 <span className="chip chip-green" style={{ fontSize: 11 }}>Ready</span>
@@ -388,11 +385,11 @@ export const StaffDashboard = () => {
                     layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    style={{ backgroundColor: '#ffffff', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
+                    style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-ink)' }}>{order.id}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#248a3d' }}>{order.tableNumber ? `Table ${order.tableNumber}` : 'Counter'}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-success)' }}>{order.tableNumber ? `Table ${order.tableNumber}` : 'Counter'}</span>
                     </div>
 
                     <button
@@ -408,7 +405,7 @@ export const StaffDashboard = () => {
             </div>
 
             {/* Column 4: Completed */}
-            <div className="store-utility-card" style={{ backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
+            <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-ink-muted-80)' }}>
                   4. RECENT COMPLETED ({ordersByStatus.Completed.length})
@@ -417,7 +414,7 @@ export const StaffDashboard = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {ordersByStatus.Completed.map(order => (
-                  <div key={order.id} style={{ padding: 12, borderRadius: 'var(--r-sm)', backgroundColor: 'var(--color-canvas-parchment)', fontSize: 13 }}>
+                  <div key={order.id} style={{ padding: 12, borderRadius: 'var(--r-sm)', backgroundColor: 'var(--color-canvas-parchment)', border: '1px solid var(--color-hairline)', fontSize: 13 }}>
                     <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{order.id} • {order.customerName}</div>
                     <div style={{ color: 'var(--color-ink-muted-48)' }}>{order.items?.length} items • Completed</div>
                   </div>
@@ -458,8 +455,9 @@ export const StaffDashboard = () => {
                   layout
                   className="store-utility-card"
                   style={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                    backgroundColor: 'var(--color-surface-pearl)',
                     backdropFilter: 'blur(16px)',
+                    border: '1px solid var(--color-hairline)',
                     padding: 24, 
                     display: 'flex', 
                     flexDirection: 'column', 
