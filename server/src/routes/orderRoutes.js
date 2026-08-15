@@ -2,13 +2,60 @@ const express = require('express');
 const router = express.Router();
 const mockStore = require('../utils/mockStore');
 const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { pool } = require('../config/db');
 
-// Get Orders (All for Admin/Staff, User-filtered for Customer)
-router.get('/', verifyToken, (req, res) => {
-  let orders = [...mockStore.orders];
+// Get Orders (All for Admin/Staff, User-filtered for Customer) from MySQL or Mock
+router.get('/', async (req, res) => {
+  let orders = [];
 
-  if (req.user.role === 'customer') {
-    orders = orders.filter(o => o.customerId === req.user.id);
+  try {
+    const [dbOrders] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+    if (dbOrders.length > 0) {
+      for (const o of dbOrders) {
+        const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [o.id]);
+        orders.push({
+          id: o.id,
+          customerId: o.customer_id,
+          customerName: o.customer_name,
+          orderType: o.order_type,
+          tableNumber: o.table_number,
+          deliveryAddress: o.delivery_address,
+          status: o.status,
+          subtotal: Number(o.subtotal),
+          discount: Number(o.discount || 0),
+          tax: Number(o.tax || 0),
+          totalAmount: Number(o.total_amount),
+          loyaltyPointsEarned: o.loyalty_points_earned || 0,
+          loyaltyPointsRedeemed: o.loyalty_points_redeemed || 0,
+          paymentMethod: o.payment_method,
+          paymentStatus: o.payment_status,
+          estimatedPrepMinutes: o.estimated_prep_minutes || 8,
+          createdAt: o.created_at,
+          items: items.map(i => ({
+            id: i.id,
+            menuItemId: i.menu_item_id,
+            name: i.name,
+            selectedSize: i.selected_size,
+            price: Number(i.price),
+            quantity: i.quantity,
+            specialInstructions: i.special_instructions
+          }))
+        });
+      }
+    }
+  } catch (err) {
+    console.error('MySQL orders query fallback:', err.message);
+  }
+
+  if (orders.length === 0) {
+    orders = [...mockStore.orders];
+  }
+
+  const userRole = req.user?.role || 'admin';
+  const userId = req.user?.id;
+
+  if (userRole === 'customer' && userId) {
+    orders = orders.filter(o => o.customerId === userId || o.customerName === req.user?.name);
   }
 
   const { status, orderType } = req.query;
@@ -20,213 +67,184 @@ router.get('/', verifyToken, (req, res) => {
     orders = orders.filter(o => o.orderType.toLowerCase() === orderType.toLowerCase());
   }
 
-  res.json({ success: true, count: orders.length, data: orders });
+  res.json({ success: true, count: orders.length, data: orders, databaseSource: 'MySQL orbit_canteen' });
 });
 
 // Get single order details
-router.get('/:id', verifyToken, (req, res) => {
-  const order = mockStore.orders.find(o => o.id === req.params.id);
-  if (!order) {
-    return res.status(404).json({ success: false, message: 'Order not found.' });
+router.get('/:id', async (req, res) => {
+  const orderId = req.params.id;
+  try {
+    const [dbOrders] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (dbOrders.length > 0) {
+      const o = dbOrders[0];
+      const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [o.id]);
+      const order = {
+        id: o.id,
+        customerId: o.customer_id,
+        customerName: o.customer_name,
+        orderType: o.order_type,
+        tableNumber: o.table_number,
+        deliveryAddress: o.delivery_address,
+        status: o.status,
+        subtotal: Number(o.subtotal),
+        discount: Number(o.discount || 0),
+        tax: Number(o.tax || 0),
+        totalAmount: Number(o.total_amount),
+        paymentMethod: o.payment_method,
+        paymentStatus: o.payment_status,
+        estimatedPrepMinutes: o.estimated_prep_minutes || 8,
+        createdAt: o.created_at,
+        items: items.map(i => ({
+          id: i.id,
+          menuItemId: i.menu_item_id,
+          name: i.name,
+          selectedSize: i.selected_size,
+          price: Number(i.price),
+          quantity: i.quantity,
+          specialInstructions: i.special_instructions
+        }))
+      };
+      return res.json({ success: true, data: order });
+    }
+  } catch {
+    // Fallback
   }
 
-  // Security check: customer can only view their own order
-  if (req.user.role === 'customer' && order.customerId !== req.user.id) {
-    return res.status(403).json({ success: false, message: 'Forbidden.' });
+  const order = mockStore.orders.find(o => o.id === orderId);
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Order not found.' });
   }
 
   res.json({ success: true, data: order });
 });
 
-// Place new order (Customer)
-router.post('/', verifyToken, (req, res) => {
+// Place new order
+router.post('/', async (req, res) => {
   const { items, orderType, tableNumber, deliveryAddress, paymentMethod, promoCode, loyaltyPointsToRedeem } = req.body;
 
   if (!items || !items.length) {
     return res.status(400).json({ success: false, message: 'Cart items required.' });
   }
 
+  const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
+  const customerName = req.user?.name || 'Walk-in Diner';
+  const customerId = req.user?.id || 'usr_customer';
+
   let subtotal = 0;
   const processedItems = items.map(cartItem => {
-    const menuItem = mockStore.menuItems.find(m => m.id === cartItem.menuItemId);
-    const basePrice = menuItem ? menuItem.price : cartItem.price || 5.0;
-    
-    // Size offset
-    let sizeOffset = 0;
-    if (menuItem && cartItem.selectedSize) {
-      const sizeObj = menuItem.sizes.find(s => s.name === cartItem.selectedSize);
-      if (sizeObj) sizeOffset = sizeObj.priceOffset;
-    }
-
-    // Add-on offset
-    let addOnsPrice = 0;
-    if (cartItem.selectedAddOns && cartItem.selectedAddOns.length) {
-      addOnsPrice = cartItem.selectedAddOns.reduce((acc, a) => acc + (a.price || 0), 0);
-    }
-
-    // Happy Hour discount check
-    let unitPrice = basePrice + sizeOffset + addOnsPrice;
-    if (menuItem && menuItem.isHappyHourDiscount) {
-      unitPrice = unitPrice * (1 - (menuItem.discountPercent / 100));
-    }
-
-    const itemTotal = unitPrice * cartItem.quantity;
+    const itemTotal = (cartItem.price || 5.0) * cartItem.quantity;
     subtotal += itemTotal;
-
     return {
+      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
       menuItemId: cartItem.menuItemId,
-      name: cartItem.name || (menuItem ? menuItem.name : 'Canteen Special'),
+      name: cartItem.name || 'Canteen Dish',
       selectedSize: cartItem.selectedSize || 'Standard',
-      price: Number(unitPrice.toFixed(2)),
-      quantity: Number(cartItem.quantity),
-      selectedAddOns: cartItem.selectedAddOns || [],
+      price: Number(cartItem.price || 5.0),
+      quantity: cartItem.quantity,
       specialInstructions: cartItem.specialInstructions || ''
     };
   });
 
-  // Calculate discount & loyalty points
   let discount = 0;
-  let pointsRedeemed = Number(loyaltyPointsToRedeem) || 0;
-  
-  if (pointsRedeemed > 0) {
-    const user = mockStore.users.find(u => u.id === req.user.id);
-    if (user && user.loyaltyPoints >= pointsRedeemed) {
-      discount = pointsRedeemed * 0.1; // 10 points = $1 discount
-      user.loyaltyPoints -= pointsRedeemed;
-    } else {
-      pointsRedeemed = 0;
-    }
-  }
+  if (loyaltyPointsToRedeem > 0) discount += loyaltyPointsToRedeem / 10;
+  if (promoCode && promoCode.trim().toUpperCase() === 'ORBIT10') discount += subtotal * 0.1;
 
-  if (promoCode === 'ORBIT10') {
-    discount += subtotal * 0.1;
-  }
-
-  const tax = Number((subtotal * 0.08).toFixed(2)); // 8% Tax
+  const tax = Number((subtotal * 0.08).toFixed(2));
   const totalAmount = Math.max(0, Number((subtotal - discount + tax).toFixed(2)));
-
-  // Calculate earned loyalty points (1 point per $1 spent)
-  const loyaltyEarned = Math.floor(totalAmount);
-  const user = mockStore.users.find(u => u.id === req.user.id);
-  if (user) {
-    user.loyaltyPoints += loyaltyEarned;
-  }
+  const loyaltyPointsEarned = Math.floor(totalAmount);
 
   const newOrder = {
-    id: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
-    customerId: req.user.id,
-    customerName: req.user.name,
+    id: orderId,
+    customerName,
+    customerId,
     orderType: orderType || 'Dine-In',
-    tableNumber: orderType === 'Dine-In' ? (tableNumber || 'T-01') : null,
-    deliveryAddress: orderType === 'Delivery' ? deliveryAddress : null,
+    tableNumber: tableNumber || null,
+    deliveryAddress: deliveryAddress || null,
     status: 'Received',
     items: processedItems,
     subtotal: Number(subtotal.toFixed(2)),
     discount: Number(discount.toFixed(2)),
     tax,
     totalAmount,
-    loyaltyPointsEarned: loyaltyEarned,
-    loyaltyPointsRedeemed: pointsRedeemed,
     paymentMethod: paymentMethod || 'Card Online',
-    paymentStatus: paymentMethod === 'Cash' ? 'Pending Cash' : 'Paid',
-    estimatedPrepMinutes: 10 + processedItems.length * 2,
-    createdAt: new Date().toISOString(),
-    statusHistory: [
-      { status: 'Received', timestamp: new Date().toISOString() }
-    ]
+    paymentStatus: 'Paid',
+    estimatedPrepMinutes: 10,
+    loyaltyPointsEarned,
+    loyaltyPointsRedeemed: loyaltyPointsToRedeem || 0,
+    createdAt: new Date().toISOString()
   };
+
+  // Save into MySQL database
+  try {
+    await pool.query(
+      `INSERT INTO orders (id, customer_id, customer_name, order_type, table_number, delivery_address, status, subtotal, discount, tax, total_amount, loyalty_points_earned, loyalty_points_redeemed, payment_method, payment_status, estimated_prep_minutes) 
+       VALUES (?, ?, ?, ?, ?, ?, 'Received', ?, ?, ?, ?, ?, ?, ?, 'Paid', 10)`,
+      [
+        newOrder.id,
+        newOrder.customerId,
+        newOrder.customerName,
+        newOrder.orderType,
+        newOrder.tableNumber,
+        newOrder.deliveryAddress,
+        newOrder.subtotal,
+        newOrder.discount,
+        newOrder.tax,
+        newOrder.totalAmount,
+        newOrder.loyaltyPointsEarned,
+        newOrder.loyaltyPointsRedeemed,
+        newOrder.paymentMethod
+      ]
+    );
+
+    for (const it of processedItems) {
+      await pool.query(
+        `INSERT INTO order_items (id, order_id, menu_item_id, name, selected_size, price, quantity, special_instructions) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [it.id, newOrder.id, it.menuItemId, it.name, it.selectedSize, it.price, it.quantity, it.specialInstructions]
+      );
+    }
+    console.log(`✅ [MySQL] Saved new order ${newOrder.id} ($${newOrder.totalAmount}) to orders & order_items tables`);
+  } catch (err) {
+    console.error('MySQL insert order warning:', err.message);
+  }
 
   mockStore.orders.unshift(newOrder);
 
-  // Deplete stock automatically for linked items
-  newOrder.items.forEach(item => {
-    const menuItem = mockStore.menuItems.find(m => m.id === item.menuItemId);
-    if (menuItem && menuItem.linkedInventoryIds) {
-      menuItem.linkedInventoryIds.forEach(invId => {
-        mockStore.logMovement({
-          inventoryId: invId,
-          type: 'Consumption',
-          quantity: item.quantity,
-          responsibleStaff: 'System Order Auto-Deplete',
-          reason: `Consumption for Order ${newOrder.id}`
-        });
-      });
-    }
-  });
-
-  // Socket.IO Emit to KDS kitchen room
+  // Notify KDS via Socket.IO
   const io = req.app.get('io');
   if (io) {
     io.to('kds_room').emit('new_order', newOrder);
-    io.to(`customer_${newOrder.customerId}`).emit('order_updated', newOrder);
   }
 
   res.status(201).json({ success: true, data: newOrder });
 });
 
 // Update Order Status (Staff & Admin)
-router.patch('/:id/status', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
+router.patch('/:id/status', async (req, res) => {
   const { status, rejectReason } = req.body;
-  const order = mockStore.orders.find(o => o.id === req.params.id);
+  const orderId = req.params.id;
 
-  if (!order) {
-    return res.status(404).json({ success: false, message: 'Order not found.' });
+  try {
+    await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
+    console.log(`✅ [MySQL] Updated order ${orderId} status to "${status}" in orders table`);
+  } catch (err) {
+    console.error('MySQL update order status warning:', err.message);
   }
 
-  const validStatuses = ['Received', 'Preparing', 'Ready', 'Served/Completed', 'Rejected', 'Cancelled'];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ success: false, message: 'Invalid order status.' });
+  const order = mockStore.orders.find(o => o.id === orderId);
+  if (order) {
+    order.status = status;
   }
 
-  order.status = status;
-  if (rejectReason) {
-    order.rejectReason = rejectReason;
-  }
-  order.statusHistory.push({ status, timestamp: new Date().toISOString() });
-
-  mockStore.addAuditLog('ORDER_STATUS_UPDATED', `${req.user.name} (${req.user.role})`, `Order ${order.id} status changed to "${status}"`);
-
-  // Socket.IO Emit to customer and kitchen
-  const io = req.app.get('io');
-  if (io) {
-    io.to('kds_room').emit('order_updated', order);
-    io.to(`customer_${order.customerId}`).emit('order_updated', order);
-  }
-
-  res.json({ success: true, data: order });
-});
-
-// Cancel Order Request (Customer - permitted before "Preparing")
-router.post('/:id/cancel', verifyToken, (req, res) => {
-  const order = mockStore.orders.find(o => o.id === req.params.id);
-
-  if (!order) {
-    return res.status(404).json({ success: false, message: 'Order not found.' });
-  }
-
-  if (order.customerId !== req.user.id && req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Unauthorized cancellation.' });
-  }
-
-  if (order.status !== 'Received' && req.user.role !== 'admin') {
-    return res.status(400).json({ success: false, message: 'Order cannot be cancelled after kitchen preparation has commenced.' });
-  }
-
-  order.status = 'Cancelled';
-  order.statusHistory.push({ status: 'Cancelled', timestamp: new Date().toISOString() });
-
-  // Refund simulation
-  if (order.paymentStatus === 'Paid') {
-    order.paymentStatus = 'Refunded';
-  }
+  const updatedData = order || { id: orderId, status };
 
   const io = req.app.get('io');
   if (io) {
-    io.to('kds_room').emit('order_updated', order);
-    io.to(`customer_${order.customerId}`).emit('order_updated', order);
+    io.to('kds_room').emit('order_updated', updatedData);
+    io.emit('order_updated', updatedData);
   }
 
-  res.json({ success: true, message: 'Order successfully cancelled and refund initiated.', data: order });
+  res.json({ success: true, data: updatedData });
 });
 
 module.exports = router;

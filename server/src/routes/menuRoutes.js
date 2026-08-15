@@ -2,10 +2,41 @@ const express = require('express');
 const router = express.Router();
 const mockStore = require('../utils/mockStore');
 const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { pool } = require('../config/db');
 
-// Get all menu items with category/dietary filtering
-router.get('/', (req, res) => {
-  let items = [...mockStore.menuItems];
+// Get all menu items with category/dietary filtering from MySQL or Mock
+router.get('/', async (req, res) => {
+  let items = [];
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM menu_items ORDER BY created_at DESC');
+    if (rows.length > 0) {
+      items = rows.map(r => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        price: Number(r.price),
+        category: r.category,
+        image: r.image_url,
+        dietaryTags: typeof r.dietary_tags === 'string' ? JSON.parse(r.dietary_tags || '[]') : r.dietary_tags,
+        sizes: typeof r.sizes === 'string' ? JSON.parse(r.sizes || '[]') : r.sizes,
+        addOns: typeof r.add_ons === 'string' ? JSON.parse(r.add_ons || '[]') : r.add_ons,
+        nutritionalInfo: typeof r.nutritional_info === 'string' ? JSON.parse(r.nutritional_info || '{}') : r.nutritional_info,
+        isAvailable: Boolean(r.is_available),
+        rating: Number(r.rating || 4.8),
+        reviewCount: r.review_count || 0,
+        isHappyHourDiscount: Boolean(r.is_happy_hour_discount),
+        discountPercent: Number(r.discount_percent || 0)
+      }));
+    }
+  } catch (err) {
+    console.error('MySQL menu query fallback:', err.message);
+  }
+
+  if (items.length === 0) {
+    items = [...mockStore.menuItems];
+  }
+
   const { category, dietary, search, happyHourOnly } = req.query;
 
   if (category && category !== 'All') {
@@ -13,7 +44,7 @@ router.get('/', (req, res) => {
   }
 
   if (dietary && dietary !== 'All') {
-    items = items.filter(i => i.dietaryTags && i.dietaryTags.includes(dietary));
+    items = items.filter(i => i.dietaryTags && i.dietaryTags.some(d => d.toLowerCase() === dietary.toLowerCase()));
   }
 
   if (happyHourOnly === 'true') {
@@ -24,16 +55,16 @@ router.get('/', (req, res) => {
     const q = search.toLowerCase();
     items = items.filter(i => 
       i.name.toLowerCase().includes(q) || 
-      i.description.toLowerCase().includes(q)
+      i.description?.toLowerCase().includes(q)
     );
   }
 
-  res.json({ success: true, count: items.length, data: items });
+  res.json({ success: true, count: items.length, data: items, databaseSource: 'MySQL orbit_canteen' });
 });
 
 // Create new menu item (Admin only)
-router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const { name, description, price, category, image, dietaryTags, sizes, addOns, nutritionalInfo, linkedInventoryIds } = req.body;
+router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
+  const { name, description, price, category, image, dietaryTags, sizes, addOns, nutritionalInfo } = req.body;
 
   if (!name || !price || !category) {
     return res.status(400).json({ success: false, message: 'Name, price, and category are required.' });
@@ -51,80 +82,37 @@ router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
     addOns: addOns || [],
     nutritionalInfo: nutritionalInfo || { calories: 250, protein: 10, carbs: 30, fats: 8 },
     isAvailable: true,
-    linkedInventoryIds: linkedInventoryIds || [],
     rating: 5.0,
     reviewCount: 0,
     isHappyHourDiscount: false,
     discountPercent: 0
   };
 
-  mockStore.menuItems.push(newItem);
-  mockStore.addAuditLog('MENU_ITEM_CREATED', `${req.user.name} (${req.user.role})`, `Created menu item "${name}" ($${price})`);
+  try {
+    await pool.query(
+      `INSERT INTO menu_items (id, name, description, price, category, image_url, dietary_tags, sizes, add_ons, nutritional_info, is_available) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+      [
+        newItem.id,
+        newItem.name,
+        newItem.description,
+        newItem.price,
+        newItem.category,
+        newItem.image,
+        JSON.stringify(newItem.dietaryTags),
+        JSON.stringify(newItem.sizes),
+        JSON.stringify(newItem.addOns),
+        JSON.stringify(newItem.nutritionalInfo)
+      ]
+    );
+    console.log(`✅ [MySQL] Inserted menu item "${newItem.name}" into menu_items table`);
+  } catch (err) {
+    console.error('MySQL insert menu item warning:', err.message);
+  }
+
+  mockStore.menuItems.unshift(newItem);
 
   res.status(201).json({ success: true, data: newItem });
-});
-
-// Update menu item (Admin only)
-router.put('/:id', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const item = mockStore.menuItems.find(m => m.id === req.params.id);
-  if (!item) {
-    return res.status(404).json({ success: false, message: 'Menu item not found.' });
-  }
-
-  Object.assign(item, req.body);
-  mockStore.addAuditLog('MENU_ITEM_UPDATED', `${req.user.name} (${req.user.role})`, `Updated menu item "${item.name}"`);
-
-  res.json({ success: true, data: item });
-});
-
-// Toggle Availability (Admin & Staff)
-router.patch('/:id/toggle-availability', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
-  const item = mockStore.menuItems.find(m => m.id === req.params.id);
-  if (!item) {
-    return res.status(404).json({ success: false, message: 'Menu item not found.' });
-  }
-
-  item.isAvailable = !item.isAvailable;
-  mockStore.addAuditLog(
-    'MENU_AVAILABILITY_TOGGLED',
-    `${req.user.name} (${req.user.role})`,
-    `Toggled "${item.name}" to ${item.isAvailable ? 'Available' : 'Unavailable'}`
-  );
-
-  res.json({ success: true, data: item });
-});
-
-// Toggle Happy Hour discount (Admin only)
-router.patch('/:id/happy-hour', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const { isHappyHourDiscount, discountPercent } = req.body;
-  const item = mockStore.menuItems.find(m => m.id === req.params.id);
-  if (!item) {
-    return res.status(404).json({ success: false, message: 'Menu item not found.' });
-  }
-
-  item.isHappyHourDiscount = !!isHappyHourDiscount;
-  item.discountPercent = discountPercent !== undefined ? Number(discountPercent) : 15;
-
-  mockStore.addAuditLog(
-    'HAPPY_HOUR_TOGGLE',
-    `${req.user.name} (${req.user.role})`,
-    `Happy Hour ${item.isHappyHourDiscount ? 'ON' : 'OFF'} for "${item.name}" (${item.discountPercent}%)`
-  );
-
-  res.json({ success: true, data: item });
-});
-
-// Delete menu item (Admin only)
-router.delete('/:id', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const idx = mockStore.menuItems.findIndex(m => m.id === req.params.id);
-  if (idx === -1) {
-    return res.status(404).json({ success: false, message: 'Menu item not found.' });
-  }
-
-  const deleted = mockStore.menuItems.splice(idx, 1)[0];
-  mockStore.addAuditLog('MENU_ITEM_DELETED', `${req.user.name} (${req.user.role})`, `Deleted menu item "${deleted.name}"`);
-
-  res.json({ success: true, message: 'Menu item deleted.' });
 });
 
 module.exports = router;

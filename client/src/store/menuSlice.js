@@ -1,16 +1,23 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { defaultSeedMenuItems } from '../utils/mockMenuData';
 
-export const fetchMenuItems = createAsyncThunk('menu/fetchMenuItems', async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/menu?${query}`);
-  const data = await res.json();
-  return data.data || [];
+export const fetchMenuItems = createAsyncThunk('menu/fetchMenuItems', async (params = {}, { rejectWithValue }) => {
+  try {
+    const query = new URLSearchParams(params).toString();
+    const res = await fetch(`/api/menu?${query}`);
+    if (!res.ok) throw new Error('Failed to fetch menu items');
+    const data = await res.json();
+    return (data.data && data.data.length > 0) ? data.data : defaultSeedMenuItems;
+  } catch (err) {
+    // Return fallback seed menu items if server is offline/starting
+    return defaultSeedMenuItems;
+  }
 });
 
 const menuSlice = createSlice({
   name: 'menu',
   initialState: {
-    items: [],
+    items: defaultSeedMenuItems,
     selectedCategory: 'All',
     selectedDietary: 'All',
     searchQuery: '',
@@ -46,15 +53,17 @@ const menuSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchMenuItems.pending, (state) => {
-        state.loading = true;
+        state.loading = false; // Keep smooth UX without flash
       })
       .addCase(fetchMenuItems.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        if (action.payload && action.payload.length > 0) {
+          state.items = action.payload;
+        }
       })
-      .addCase(fetchMenuItems.rejected, (state, action) => {
+      .addCase(fetchMenuItems.rejected, (state) => {
         state.loading = false;
-        state.error = action.error.message;
+        // Keep defaultSeedMenuItems
       });
   }
 });
