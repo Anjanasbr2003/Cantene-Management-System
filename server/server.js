@@ -6,6 +6,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const { checkDatabaseHealth, pool } = require('./src/config/db');
+
 const authRoutes = require('./src/routes/authRoutes');
 const menuRoutes = require('./src/routes/menuRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
@@ -37,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 // Basic Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 500,
   message: { success: false, message: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
@@ -55,9 +57,49 @@ app.use('/api/reviews', reviewRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
-    system: 'Orbit Canteen Management Core',
+    system: 'Canteen Management System Core',
     timestamp: new Date().toISOString()
   });
+});
+
+// MySQL Database Status & Telemetry Endpoint
+app.get('/api/db-status', async (req, res) => {
+  try {
+    const connection = await pool.getConnection();
+    const [tableRows] = await connection.query('SHOW TABLES;');
+    const tables = tableRows.map(r => Object.values(r)[0]);
+    
+    // Count rows in key tables
+    const tableCounts = {};
+    for (const t of tables) {
+      const [cntRow] = await connection.query(`SELECT COUNT(*) as count FROM ${t}`);
+      tableCounts[t] = cntRow[0].count;
+    }
+    
+    connection.release();
+
+    res.json({
+      success: true,
+      database: process.env.DB_NAME || 'orbit_canteen',
+      engine: 'MySQL 8.0 / MariaDB',
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 3306,
+      status: 'Connected',
+      tablesCount: tables.length,
+      tables,
+      tableCounts,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      database: process.env.DB_NAME || 'orbit_canteen',
+      engine: 'MySQL',
+      status: 'Disconnected / Error',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Real-Time Socket.IO Handling
@@ -70,12 +112,10 @@ io.on('connection', (socket) => {
     console.log(`[Socket.IO] ${socket.id} joined kds_room`);
   });
 
-  // Join Customer Private Room
-  socket.on('join_customer', (userId) => {
-    if (userId) {
-      socket.join(`customer_${userId}`);
-      console.log(`[Socket.IO] ${socket.id} joined customer_${userId}`);
-    }
+  // Join Customer Room
+  socket.on('join_customer', (customerId) => {
+    socket.join(`customer_${customerId}`);
+    console.log(`[Socket.IO] ${socket.id} joined customer_${customerId}`);
   });
 
   socket.on('disconnect', () => {
@@ -83,29 +123,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('[Error Middleware]:', err);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal Server Error'
-  });
+// Start HTTP Server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, async () => {
+  console.log(`🚀 Canteen Management System Backend running on http://localhost:${PORT}`);
+  await checkDatabaseHealth();
 });
-
-let PORT = process.env.PORT || 5000;
-
-function startServer(portToUse) {
-  server.listen(portToUse, () => {
-    console.log(`🚀 Orbit Canteen Backend running on http://localhost:${portToUse}`);
-  }).on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`[Port ${portToUse} busy, trying port ${portToUse + 1}...]`);
-      startServer(portToUse + 1);
-    } else {
-      console.error(err);
-    }
-  });
-}
-
-startServer(Number(PORT));
-

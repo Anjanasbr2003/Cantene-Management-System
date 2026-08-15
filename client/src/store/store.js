@@ -5,6 +5,7 @@ import menuReducer from './menuSlice';
 import inventoryReducer from './inventorySlice';
 import orderReducer from './orderSlice';
 import tableReducer from './tableSlice';
+import themeReducer from './themeSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     menu: menuReducer,
     inventory: inventoryReducer,
     orders: orderReducer,
-    tables: tableReducer
+    tables: tableReducer,
+    theme: themeReducer
   }
 });

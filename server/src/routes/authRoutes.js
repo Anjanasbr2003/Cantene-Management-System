@@ -4,16 +4,39 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mockStore = require('../utils/mockStore');
 const { verifyToken } = require('../middleware/auth');
+const { pool } = require('../config/db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'antigravity_sci_fi_canteen_secret_key_2026';
 
 // Sign in
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password, roleDemo } = req.body;
 
   // 1-Click Role Demo Switcher Support
   if (roleDemo) {
-    const targetUser = mockStore.users.find(u => u.role === roleDemo);
+    let targetUser = null;
+    try {
+      const [dbUsers] = await pool.query('SELECT * FROM users WHERE role = ? LIMIT 1', [roleDemo]);
+      if (dbUsers.length > 0) {
+        const u = dbUsers[0];
+        targetUser = {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          avatar: u.avatar,
+          loyaltyPoints: u.loyalty_points || 0,
+          phone: u.phone
+        };
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (!targetUser) {
+      targetUser = mockStore.users.find(u => u.role === roleDemo);
+    }
+
     if (targetUser) {
       const token = jwt.sign(
         { id: targetUser.id, email: targetUser.email, role: targetUser.role },
@@ -23,15 +46,7 @@ router.post('/login', (req, res) => {
       return res.json({
         success: true,
         token,
-        user: {
-          id: targetUser.id,
-          name: targetUser.name,
-          email: targetUser.email,
-          role: targetUser.role,
-          avatar: targetUser.avatar,
-          loyaltyPoints: targetUser.loyaltyPoints,
-          phone: targetUser.phone
-        }
+        user: targetUser
       });
     }
   }
@@ -40,7 +55,30 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ success: false, message: 'Email and password required.' });
   }
 
-  const user = mockStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  let user = null;
+  try {
+    const [dbUsers] = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1', [email]);
+    if (dbUsers.length > 0) {
+      const u = dbUsers[0];
+      user = {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        passwordHash: u.password_hash,
+        role: u.role,
+        avatar: u.avatar,
+        loyaltyPoints: u.loyalty_points || 0,
+        phone: u.phone
+      };
+    }
+  } catch (err) {
+    console.error('MySQL user query fallback:', err.message);
+  }
+
+  if (!user) {
+    user = mockStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  }
+
   if (!user) {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
@@ -73,27 +111,49 @@ router.post('/login', (req, res) => {
 });
 
 // Register new customer
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { name, email, password, phone } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ success: false, message: 'All fields required.' });
   }
 
-  const existing = mockStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    return res.status(400).json({ success: false, message: 'Email already registered.' });
+  // Check existing user in MySQL DB or Mock
+  try {
+    const [existing] = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [email]);
+    if (existing.length > 0) {
+      return res.status(400).json({ success: false, message: 'Email already registered in database.' });
+    }
+  } catch {
+    // Proceed
+  }
+
+  const newId = 'usr_' + Date.now();
+  const passwordHash = bcrypt.hashSync(password, 10);
+  const avatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`;
+  const userPhone = phone || '+1 555-0100';
+  const loyaltyPoints = 50;
+
+  // Insert into MySQL users table
+  try {
+    await pool.query(
+      `INSERT INTO users (id, name, email, password_hash, role, avatar, phone, loyalty_points) 
+       VALUES (?, ?, ?, ?, 'customer', ?, ?, ?)`,
+      [newId, name, email, passwordHash, avatar, userPhone, loyaltyPoints]
+    );
+    console.log(`✅ [MySQL] Inserted new user "${name}" (${email}) into users table`);
+  } catch (err) {
+    console.error('MySQL insert user warning:', err.message);
   }
 
   const newUser = {
-    id: 'usr_' + Date.now(),
+    id: newId,
     name,
     email,
-    passwordHash: bcrypt.hashSync(password, 10),
+    passwordHash,
     role: 'customer',
-    avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
-    phone: phone || '+1 555-0100',
-    loyaltyPoints: 50, // Welcome Bonus!
-    createdAt: new Date().toISOString()
+    avatar,
+    phone: userPhone,
+    loyaltyPoints
   };
 
   mockStore.users.push(newUser);
@@ -104,7 +164,7 @@ router.post('/register', (req, res) => {
     { expiresIn: '7d' }
   );
 
-  res.status(210 || 201).json({
+  res.status(201).json({
     success: true,
     token,
     user: {
@@ -122,17 +182,6 @@ router.post('/register', (req, res) => {
 // Profile management
 router.get('/profile', verifyToken, (req, res) => {
   res.json({ success: true, user: req.user });
-});
-
-router.put('/profile', verifyToken, (req, res) => {
-  const { name, avatar, phone } = req.body;
-  const user = mockStore.users.find(u => u.id === req.user.id);
-  if (user) {
-    if (name) user.name = name;
-    if (avatar) user.avatar = avatar;
-    if (phone) user.phone = phone;
-  }
-  res.json({ success: true, user });
 });
 
 module.exports = router;

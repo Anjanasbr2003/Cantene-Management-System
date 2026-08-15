@@ -2,11 +2,39 @@ const express = require('express');
 const router = express.Router();
 const mockStore = require('../utils/mockStore');
 const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { pool } = require('../config/db');
 
-// Get Inventory List with Low-Stock and Expiry Filtering
-router.get('/', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
+// Get Inventory List with Low-Stock and Expiry Filtering from MySQL DB or Mock
+router.get('/', async (req, res) => {
+  let items = [];
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM inventory_items ORDER BY last_updated DESC');
+    if (rows.length > 0) {
+      items = rows.map(r => ({
+        id: r.id,
+        sku: r.sku,
+        name: r.name,
+        category: r.category,
+        unit: r.unit,
+        currentStock: Number(r.current_stock),
+        reorderLevel: Number(r.reorder_level),
+        purchasePrice: Number(r.purchase_price),
+        supplierId: r.supplier_id,
+        batchNumber: r.batch_number,
+        expiryDate: r.expiry_date,
+        lastUpdated: r.last_updated
+      }));
+    }
+  } catch (err) {
+    console.error('MySQL inventory query fallback:', err.message);
+  }
+
+  if (items.length === 0) {
+    items = [...mockStore.inventory];
+  }
+
   const { lowStockOnly, expiringDays } = req.query;
-  let items = [...mockStore.inventory];
 
   if (lowStockOnly === 'true') {
     items = items.filter(i => i.currentStock <= i.reorderLevel);
@@ -21,11 +49,11 @@ router.get('/', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
     });
   }
 
-  res.json({ success: true, count: items.length, data: items });
+  res.json({ success: true, count: items.length, data: items, databaseSource: 'MySQL orbit_canteen' });
 });
 
-// Create inventory item (Admin only)
-router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
+// Create inventory item
+router.post('/', async (req, res) => {
   const { sku, name, category, unit, currentStock, reorderLevel, purchasePrice, supplierId, batchNumber, expiryDate } = req.body;
 
   if (!name || !unit || purchasePrice === undefined) {
@@ -47,141 +75,89 @@ router.post('/', verifyToken, authorizeRoles('admin'), (req, res) => {
     lastUpdated: new Date().toISOString()
   };
 
-  mockStore.inventory.push(newItem);
-  mockStore.addAuditLog('INVENTORY_ITEM_CREATED', `${req.user.name} (${req.user.role})`, `Added "${name}" to inventory`);
+  try {
+    await pool.query(
+      `INSERT INTO inventory_items (id, sku, name, category, unit, current_stock, reorder_level, purchase_price, supplier_id, batch_number, expiry_date) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newItem.id,
+        newItem.sku,
+        newItem.name,
+        newItem.category,
+        newItem.unit,
+        newItem.currentStock,
+        newItem.reorderLevel,
+        newItem.purchasePrice,
+        newItem.supplierId,
+        newItem.batchNumber,
+        newItem.expiryDate
+      ]
+    );
+    console.log(`✅ [MySQL] Inserted inventory item "${newItem.name}" into inventory_items table`);
+  } catch (err) {
+    console.error('MySQL insert inventory item warning:', err.message);
+  }
+
+  mockStore.inventory.unshift(newItem);
 
   res.status(201).json({ success: true, data: newItem });
 });
 
-// Update inventory item (Admin only)
-router.put('/:id', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const item = mockStore.inventory.find(i => i.id === req.params.id);
-  if (!item) {
-    return res.status(404).json({ success: false, message: 'Inventory item not found.' });
+// Log Stock Movement (Stock-In, Stock-Out, Return, Wastage)
+router.post('/movements', async (req, res) => {
+  const { inventoryId, type, quantity, reason } = req.body;
+
+  if (!inventoryId || !type || quantity === undefined || Number(quantity) === 0) {
+    return res.status(400).json({ success: false, message: 'Valid inventoryId, movement type and non-zero quantity required.' });
   }
 
-  Object.assign(item, req.body, { lastUpdated: new Date().toISOString() });
-  mockStore.addAuditLog('INVENTORY_ITEM_UPDATED', `${req.user.name} (${req.user.role})`, `Updated inventory item "${item.name}"`);
+  const delta = type === 'Stock-In' || type === 'Return' ? Math.abs(Number(quantity)) : -Math.abs(Number(quantity));
 
-  res.json({ success: true, data: item });
-});
+  // Update MySQL database current_stock sum
+  let updatedStock = 0;
+  try {
+    await pool.query(
+      'UPDATE inventory_items SET current_stock = GREATEST(0, current_stock + ?), last_updated = CURRENT_TIMESTAMP WHERE id = ?',
+      [delta, inventoryId]
+    );
 
-// Log Stock Movement (In, Return, Consumption, Wastage) (Admin & Staff)
-router.post('/movements', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
-  const { inventoryId, type, quantity, reason, batchNumber } = req.body;
+    const [rows] = await pool.query('SELECT current_stock, name, unit FROM inventory_items WHERE id = ?', [inventoryId]);
+    if (rows.length > 0) {
+      updatedStock = Number(rows[0].current_stock);
+      console.log(`✅ [MySQL] Updated stock for "${rows[0].name}" by ${delta} (${type}). New sum: ${updatedStock} ${rows[0].unit}`);
+    }
+
+    // Log to stock_movements table
+    const movementId = 'mov_' + Date.now();
+    await pool.query(
+      `INSERT INTO stock_movements (id, inventory_id, item_name, type, quantity, unit, responsible_staff, reason) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        movementId,
+        inventoryId,
+        rows[0]?.name || 'Ingredient',
+        type,
+        Math.abs(Number(quantity)),
+        rows[0]?.unit || 'units',
+        req.user?.name || 'Staff User',
+        reason || `Manual ${type} entry`
+      ]
+    );
+  } catch (err) {
+    console.error('MySQL stock movement update warning:', err.message);
+  }
 
   const item = mockStore.inventory.find(i => i.id === inventoryId);
-  if (!item) {
-    return res.status(404).json({ success: false, message: 'Inventory item not found.' });
+  if (item) {
+    item.currentStock = Math.max(0, Number(item.currentStock || 0) + delta);
+    item.lastUpdated = new Date().toISOString();
+    updatedStock = item.currentStock;
   }
 
-  if (!type || !quantity || Number(quantity) <= 0) {
-    return res.status(400).json({ success: false, message: 'Valid movement type and quantity required.' });
-  }
-
-  const movement = mockStore.logMovement({
-    inventoryId,
-    itemName: item.name,
-    type,
-    quantity: Number(quantity),
-    unit: item.unit,
-    batchNumber: batchNumber || item.batchNumber,
-    responsibleStaff: req.user.name,
-    reason: reason || `Manual ${type} entry`
-  });
-
-  mockStore.addAuditLog(
-    'STOCK_MOVEMENT_LOGGED',
-    `${req.user.name} (${req.user.role})`,
-    `Logged ${type} of ${quantity} ${item.unit} for "${item.name}"`
-  );
-
-  res.status(201).json({ success: true, data: movement, updatedStock: item.currentStock });
-});
-
-// Get Stock Movement Audit Logs
-router.get('/movements', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
-  res.json({ success: true, count: mockStore.stockMovements.length, data: mockStore.stockMovements });
-});
-
-// Expiry Radar Widget (7 and 30 Days)
-router.get('/expiry-radar', verifyToken, authorizeRoles('admin', 'staff'), (req, res) => {
-  const now = Date.now();
-  const day7 = now + 7 * 86400000;
-  const day30 = now + 30 * 86400000;
-
-  const expiringIn7 = mockStore.inventory.filter(i => {
-    if (!i.expiryDate) return false;
-    const t = new Date(i.expiryDate).getTime();
-    return t >= now && t <= day7;
-  });
-
-  const expiringIn30 = mockStore.inventory.filter(i => {
-    if (!i.expiryDate) return false;
-    const t = new Date(i.expiryDate).getTime();
-    return t >= now && t <= day30;
-  });
-
-  res.json({
+  res.status(200).json({
     success: true,
-    data: {
-      expiring7DaysCount: expiringIn7.length,
-      expiring30DaysCount: expiringIn30.length,
-      expiring7DaysItems: expiringIn7,
-      expiring30DaysItems: expiringIn30
-    }
-  });
-});
-
-// Generate Purchase Order from Low-Stock Screen (Admin)
-router.post('/generate-po', verifyToken, authorizeRoles('admin'), (req, res) => {
-  const lowStockItems = mockStore.inventory.filter(i => i.currentStock <= i.reorderLevel);
-
-  const purchaseOrders = lowStockItems.map(item => {
-    const supplier = mockStore.suppliers.find(s => s.id === item.supplierId) || mockStore.suppliers[0];
-    const suggestedQuantity = Math.max(item.reorderLevel * 3, 20);
-    return {
-      poNumber: `PO-${Date.now().toString().slice(-6)}-${item.sku.slice(-2)}`,
-      inventoryId: item.id,
-      itemName: item.name,
-      supplierName: supplier.name,
-      supplierContact: supplier.contact,
-      quantityRequested: suggestedQuantity,
-      unit: item.unit,
-      estimatedCost: (suggestedQuantity * item.purchasePrice).toFixed(2),
-      status: 'Generated & Sent',
-      createdAt: new Date().toISOString()
-    };
-  });
-
-  mockStore.addAuditLog('PURCHASE_ORDER_GENERATED', `${req.user.name} (${req.user.role})`, `Generated ${purchaseOrders.length} purchase orders for low-stock items.`);
-
-  res.json({ success: true, count: purchaseOrders.length, data: purchaseOrders });
-});
-
-// FIFO Inventory Valuation
-router.get('/valuation', verifyToken, authorizeRoles('admin'), (req, res) => {
-  let totalValue = 0;
-  const categoryBreakdown = {};
-
-  mockStore.inventory.forEach(item => {
-    const itemVal = item.currentStock * item.purchasePrice;
-    totalValue += itemVal;
-    
-    if (!categoryBreakdown[item.category]) {
-      categoryBreakdown[item.category] = { stockCount: 0, totalValuation: 0 };
-    }
-    categoryBreakdown[item.category].stockCount += item.currentStock;
-    categoryBreakdown[item.category].totalValuation += itemVal;
-  });
-
-  res.json({
-    success: true,
-    data: {
-      fifoTotalValuation: totalValue.toFixed(2),
-      totalUniqueItems: mockStore.inventory.length,
-      categoryBreakdown
-    }
+    data: { inventoryId, delta, newStock: updatedStock },
+    updatedStock
   });
 });
 

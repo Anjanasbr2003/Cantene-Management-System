@@ -200,31 +200,145 @@ export const CartDrawer = ({ open, onClose }) => {
             )}
           </div>
 
-          <div className="space-y-3">
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink-muted-80)' }}>
               Items ({items.length})
             </label>
             {items.map((item) => (
-              <div key={item.cartId} className="glass-panel p-3 flex gap-3 items-center">
-                <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-lg" style={{ borderRadius: 'var(--r-sm)' }} />
-                <div className="flex-1 min-w-0">
-                  <h4 style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Tag>{item.selectedSize}</Tag>
-                    <span style={{ fontSize: 13, fontWeight: 500 }}>${item.price.toFixed(2)}</span>
+              <div
+                key={item.cartId}
+                className="glass-panel"
+                style={{
+                  padding: 12,
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'center',
+                  background: 'var(--color-canvas)',
+                  border: '1px solid var(--color-hairline)',
+                  borderRadius: 'var(--r-md)'
+                }}
+              >
+                {/* Properly constrained thumbnail */}
+                <div
+                  style={{
+                    width: 52,
+                    height: 52,
+                    minWidth: 52,
+                    minHeight: 52,
+                    maxWidth: 52,
+                    maxHeight: 52,
+                    borderRadius: 'var(--r-sm)',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    backgroundColor: 'var(--color-canvas-parchment)',
+                    border: '1px solid var(--color-hairline)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block'
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200';
+                    }}
+                  />
+                </div>
+
+                {/* Details */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h4
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: 'var(--color-ink)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      marginBottom: 2
+                    }}
+                  >
+                    {item.name}
+                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: '1px 7px',
+                        borderRadius: 'var(--r-pill)',
+                        backgroundColor: 'var(--color-canvas-parchment)',
+                        border: '1px solid var(--color-hairline)',
+                        color: 'var(--color-ink-muted-80)'
+                      }}
+                    >
+                      {item.selectedSize}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink)' }}>
+                      ${item.price.toFixed(2)}
+                    </span>
                   </div>
                   {item.selectedAddOns?.length > 0 && (
-                    <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p
+                      style={{
+                        fontSize: 11.5,
+                        color: 'var(--color-ink-muted-48)',
+                        marginTop: 3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       + {item.selectedAddOns.map(a => a.name).join(', ')}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-1" style={{ background: 'var(--bg-secondary)', padding: 4, borderRadius: 'var(--r-pill)' }}>
-                  <Button type="text" size="small" icon={<Minus size={12} />} onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: -1 }))} />
-                  <span style={{ fontSize: 13, fontWeight: 600, padding: '0 4px', minWidth: 20, textAlign: 'center' }}>{item.quantity}</span>
-                  <Button type="text" size="small" icon={<Plus size={12} />} onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: 1 }))} />
+
+                {/* Quantity Controls */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    background: 'var(--color-canvas-parchment)',
+                    padding: '2px 4px',
+                    borderRadius: 'var(--r-pill)',
+                    border: '1px solid var(--color-hairline)'
+                  }}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<Minus size={11} />}
+                    onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: -1 }))}
+                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                  />
+                  <span style={{ fontSize: 13, fontWeight: 600, padding: '0 4px', minWidth: 16, textAlign: 'center' }}>
+                    {item.quantity}
+                  </span>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<Plus size={11} />}
+                    onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: 1 }))}
+                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                  />
                 </div>
-                <Button type="text" danger icon={<Trash2 size={16} />} onClick={() => dispatch(removeFromCart(item.cartId))} />
+
+                {/* Delete */}
+                <Button
+                  type="text"
+                  danger
+                  icon={<Trash2 size={15} />}
+                  onClick={() => dispatch(removeFromCart(item.cartId))}
+                  style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                />
               </div>
             ))}
           </div>
