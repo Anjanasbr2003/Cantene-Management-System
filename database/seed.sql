@@ -10,11 +10,11 @@ USE orbit_canteen;
 -- 1. SEED USERS
 -- ------------------------------------------------------------
 INSERT INTO users (id, name, email, password_hash, role, avatar, phone, loyalty_points, created_at) VALUES
-('usr_admin', 'Dr. Orion Vance', 'admin@orbitcanteen.io', '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', 'admin', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', '+1 800-555-0199', 1250, '2026-08-01 10:00:00'),
-('usr_staff', 'Elena Rostova', 'staff@orbitcanteen.io', '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', 'staff', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', '+1 800-555-0142', 450, '2026-08-01 10:30:00'),
-('usr_customer', 'Alex Mercer', 'customer@orbitcanteen.io', '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', 'customer', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', '+1 800-555-0188', 340, '2026-08-02 09:15:00'),
-('usr_customer_2', 'Sophia Lin', 'sophia.lin@orbitcanteen.io', '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', 'customer', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', '+1 800-555-0177', 180, '2026-08-03 11:20:00'),
-('usr_customer_3', 'Marcus Vance', 'marcus.vance@orbitcanteen.io', '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', 'customer', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', '+1 800-555-0166', 520, '2026-08-04 14:45:00');
+('usr_admin', 'Dr. Orion Vance', 'admin@orbitcanteen.io', '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', 'admin', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', '+1 800-555-0199', 1250, '2026-08-01 10:00:00'),
+('usr_staff', 'Elena Rostova', 'staff@orbitcanteen.io', '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', 'staff', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', '+1 800-555-0142', 450, '2026-08-01 10:30:00'),
+('usr_customer', 'Alex Mercer', 'customer@orbitcanteen.io', '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', 'customer', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150', '+1 800-555-0188', 340, '2026-08-02 09:15:00'),
+('usr_customer_2', 'Sophia Lin', 'sophia.lin@orbitcanteen.io', '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', 'customer', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', '+1 800-555-0177', 180, '2026-08-03 11:20:00'),
+('usr_customer_3', 'Marcus Vance', 'marcus.vance@orbitcanteen.io', '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', 'customer', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', '+1 800-555-0166', 520, '2026-08-04 14:45:00');
 
 -- ------------------------------------------------------------
 -- 2. SEED SUPPLIERS

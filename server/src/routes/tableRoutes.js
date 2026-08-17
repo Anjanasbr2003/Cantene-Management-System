@@ -31,14 +31,23 @@ router.get('/', async (req, res) => {
   res.json({ success: true, count: tables.length, data: tables, databaseSource: 'MySQL orbit_canteen' });
 });
 
-// Update table session status (Vacant/Available, Occupied, Reserved, Cleaning)
-router.patch('/:id/status', async (req, res) => {
+// Update table session status (Vacant/Available, Occupied, Reserved, Cleaning) (Staff & Admin)
+const ALLOWED_TABLE_STATUSES = ['Vacant', 'Occupied', 'Cleaning', 'Reserved'];
+
+router.patch('/:id/status', verifyToken, authorizeRoles('staff', 'admin'), async (req, res) => {
   const { status } = req.body;
   const tableId = req.params.id;
 
+  if (!status || !ALLOWED_TABLE_STATUSES.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid table status. Allowed values: ${ALLOWED_TABLE_STATUSES.join(', ')}`
+    });
+  }
+
   try {
     await pool.query('UPDATE canteen_tables SET status = ? WHERE id = ? OR number = ?', [status, tableId, tableId]);
-    console.log(`✅ [MySQL] Updated canteen_tables ID/Number "${tableId}" to status "${status}"`);
+    console.log(`✅ [MySQL] Updated canteen_tables ID/Number "${tableId}" to status "${status}" by ${req.user.name}`);
   } catch (err) {
     console.error('MySQL table update warning:', err.message);
   }

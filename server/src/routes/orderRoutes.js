@@ -123,58 +123,68 @@ router.get('/:id', async (req, res) => {
 });
 
 // Place new order
-router.post('/', async (req, res) => {
+router.post('/', optionalVerifyToken, async (req, res) => {
   const { items, orderType, tableNumber, deliveryAddress, paymentMethod, promoCode, loyaltyPointsToRedeem } = req.body;
 
-  if (!items || !items.length) {
-    return res.status(400).json({ success: false, message: 'Cart items required.' });
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ success: false, message: 'A non-empty cart items array is required.' });
   }
 
   const orderId = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
-  const customerName = req.user?.name || 'Walk-in Diner';
-  const customerId = req.user?.id || 'usr_customer';
+  const customerName = req.user?.name || (req.body.customerName ? String(req.body.customerName).slice(0, 100) : 'Walk-in Diner');
+  const customerId = req.user?.id || 'usr_guest';
 
   let subtotal = 0;
   const processedItems = items.map(cartItem => {
-    const itemTotal = (cartItem.price || 5.0) * cartItem.quantity;
+    const qty = Math.max(1, Math.min(100, parseInt(cartItem.quantity, 10) || 1));
+    const price = Math.max(0, parseFloat(cartItem.price) || 5.0);
+    const itemTotal = price * qty;
     subtotal += itemTotal;
     return {
       id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
-      menuItemId: cartItem.menuItemId,
-      name: cartItem.name || 'Canteen Dish',
-      selectedSize: cartItem.selectedSize || 'Standard',
-      price: Number(cartItem.price || 5.0),
-      quantity: cartItem.quantity,
-      specialInstructions: cartItem.specialInstructions || ''
+      menuItemId: cartItem.menuItemId ? String(cartItem.menuItemId).slice(0, 50) : 'item_custom',
+      name: cartItem.name ? String(cartItem.name).slice(0, 120) : 'Canteen Dish',
+      selectedSize: cartItem.selectedSize ? String(cartItem.selectedSize).slice(0, 50) : 'Standard',
+      selectedAddOns: Array.isArray(cartItem.selectedAddOns) ? cartItem.selectedAddOns : [],
+      price: Number(price.toFixed(2)),
+      quantity: qty,
+      specialInstructions: cartItem.specialInstructions ? String(cartItem.specialInstructions).slice(0, 255) : ''
     };
   });
 
   let discount = 0;
-  if (loyaltyPointsToRedeem > 0) discount += loyaltyPointsToRedeem / 10;
-  if (promoCode && promoCode.trim().toUpperCase() === 'ORBIT10') discount += subtotal * 0.1;
+  const requestedPoints = Math.max(0, parseInt(loyaltyPointsToRedeem, 10) || 0);
+  if (requestedPoints > 0) {
+    discount += requestedPoints / 10;
+  }
+  if (promoCode && promoCode.trim().toUpperCase() === 'ORBIT10') {
+    discount += subtotal * 0.1;
+  }
 
   const tax = Number((subtotal * 0.08).toFixed(2));
   const totalAmount = Math.max(0, Number((subtotal - discount + tax).toFixed(2)));
   const loyaltyPointsEarned = Math.floor(totalAmount);
 
+  const safeOrderType = ['Dine-In', 'Takeaway', 'Delivery'].includes(orderType) ? orderType : 'Dine-In';
+
   const newOrder = {
     id: orderId,
     customerName,
     customerId,
-    orderType: orderType || 'Dine-In',
-    tableNumber: tableNumber || null,
-    deliveryAddress: deliveryAddress || null,
+    orderType: safeOrderType,
+    tableNumber: tableNumber ? String(tableNumber).slice(0, 20) : null,
+    deliveryAddress: deliveryAddress ? String(deliveryAddress).slice(0, 255) : null,
     status: 'Received',
     items: processedItems,
     subtotal: Number(subtotal.toFixed(2)),
     discount: Number(discount.toFixed(2)),
     tax,
     totalAmount,
-    paymentMethod: paymentMethod || 'Card Online',
+    paymentMethod: paymentMethod ? String(paymentMethod).slice(0, 30) : 'Card Online',
     paymentStatus: 'Paid',
     estimatedPrepMinutes: 10,
     loyaltyPointsEarned,
-    loyaltyPointsRedeemed: loyaltyPointsToRedeem || 0,
+    loyaltyPointsRedeemed: requestedPoints,
     createdAt: new Date().toISOString()
   };
 
@@ -223,14 +233,23 @@ router.post('/', async (req, res) => {
   res.status(201).json({ success: true, data: newOrder });
 });
 
-// Update Order Status (Staff & Admin)
-router.patch('/:id/status', async (req, res) => {
+// Update Order Status (Staff & Admin Only)
+const ALLOWED_ORDER_STATUSES = ['Received', 'Preparing', 'Ready', 'Served/Completed', 'Completed', 'Rejected', 'Cancelled'];
+
+router.patch('/:id/status', verifyToken, authorizeRoles('staff', 'admin'), async (req, res) => {
   const { status, rejectReason } = req.body;
   const orderId = req.params.id;
 
+  if (!status || !ALLOWED_ORDER_STATUSES.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid status. Allowed values: ${ALLOWED_ORDER_STATUSES.join(', ')}`
+    });
+  }
+
   try {
     await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
-    console.log(`✅ [MySQL] Updated order ${orderId} status to "${status}" in orders table`);
+    console.log(`✅ [MySQL] Updated order ${orderId} status to "${status}" by ${req.user.name} (${req.user.role})`);
   } catch (err) {
     console.error('MySQL update order status warning:', err.message);
   }
@@ -252,3 +271,4 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 module.exports = router;
+

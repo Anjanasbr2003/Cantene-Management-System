@@ -63,24 +63,27 @@ router.get('/', async (req, res) => {
 });
 
 // Create new menu item (Admin only)
-router.post('/', optionalVerifyToken, async (req, res) => {
+router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
   const { name, description, price, category, image, dietaryTags, sizes, addOns, nutritionalInfo } = req.body;
 
-  if (!name || !price || !category) {
-    return res.status(400).json({ success: false, message: 'Name, price, and category are required.' });
+  if (!name || price === undefined || !category) {
+    return res.status(400).json({ success: false, message: 'Name, valid price, and category are required.' });
   }
+
+  const safePrice = Math.max(0, parseFloat(price) || 0);
+  const safeName = String(name).trim().slice(0, 120);
 
   const newItem = {
     id: 'menu_' + Date.now(),
-    name,
-    description: description || '',
-    price: Number(price),
-    category,
-    image: image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-    dietaryTags: dietaryTags || ['Veg'],
-    sizes: sizes || [{ name: 'Regular', priceOffset: 0 }],
-    addOns: addOns || [],
-    nutritionalInfo: nutritionalInfo || { calories: 250, protein: 10, carbs: 30, fats: 8 },
+    name: safeName,
+    description: description ? String(description).slice(0, 500) : '',
+    price: Number(safePrice.toFixed(2)),
+    category: String(category).slice(0, 50),
+    image: image ? String(image).slice(0, 500) : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
+    dietaryTags: Array.isArray(dietaryTags) ? dietaryTags : ['Veg'],
+    sizes: Array.isArray(sizes) ? sizes : [{ name: 'Regular', priceOffset: 0 }],
+    addOns: Array.isArray(addOns) ? addOns : [],
+    nutritionalInfo: (nutritionalInfo && typeof nutritionalInfo === 'object') ? nutritionalInfo : { calories: 250, protein: 10, carbs: 30, fats: 8 },
     isAvailable: true,
     rating: 5.0,
     reviewCount: 0,
@@ -105,7 +108,7 @@ router.post('/', optionalVerifyToken, async (req, res) => {
         JSON.stringify(newItem.nutritionalInfo)
       ]
     );
-    console.log(`✅ [MySQL] Inserted menu item "${newItem.name}" into menu_items table`);
+    console.log(`✅ [MySQL] Inserted menu item "${newItem.name}" into menu_items table by ${req.user.name}`);
   } catch (err) {
     console.error('MySQL insert menu item warning:', err.message);
   }
@@ -116,7 +119,7 @@ router.post('/', optionalVerifyToken, async (req, res) => {
 });
 
 // Delete menu item (Admin only)
-router.delete('/:id', optionalVerifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, authorizeRoles('admin'), async (req, res) => {
   const menuId = req.params.id;
 
   try {
@@ -124,7 +127,7 @@ router.delete('/:id', optionalVerifyToken, async (req, res) => {
     await pool.query('DELETE FROM menu_inventory_links WHERE menu_item_id = ?', [menuId]);
     await pool.query('DELETE FROM reviews WHERE menu_item_id = ?', [menuId]);
     const [result] = await pool.query('DELETE FROM menu_items WHERE id = ?', [menuId]);
-    console.log(`🗑️ [MySQL] Deleted menu item "${menuId}" from menu_items table (affected: ${result.affectedRows})`);
+    console.log(`🗑️ [MySQL] Deleted menu item "${menuId}" by ${req.user.name} (affected: ${result?.affectedRows || 0})`);
   } catch (err) {
     console.error('MySQL delete menu item warning:', err.message);
   }
@@ -138,4 +141,5 @@ router.delete('/:id', optionalVerifyToken, async (req, res) => {
 });
 
 module.exports = router;
+
 
