@@ -261,14 +261,14 @@ export const StaffDashboard = () => {
               className={activeTab === 'kds' ? 'button-dark-utility' : 'button-pearl-capsule'}
               style={{ borderRadius: 'var(--r-pill)', padding: '8px 20px', fontSize: 14 }}
             >
-              🍳 {t('kds_tab_orders')} ({displayOrders.filter(o => o.status !== 'Completed').length})
+              {t('tab_kds')} ({displayOrders.filter(o => o.status !== 'Completed').length})
             </button>
             <button
               onClick={() => setActiveTab('inventory')}
               className={activeTab === 'inventory' ? 'button-dark-utility' : 'button-pearl-capsule'}
               style={{ borderRadius: 'var(--r-pill)', padding: '8px 20px', fontSize: 14 }}
             >
-              📦 {t('kds_tab_inventory')} ({displayInventory.length})
+              {t('tab_inventory')} ({displayInventory.length})
             </button>
           </div>
 
