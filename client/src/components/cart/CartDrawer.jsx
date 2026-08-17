@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Drawer, Button, Input, Radio, Tag, message, Modal, Divider } from 'antd';
+import { Drawer, Button, Input, message, Modal } from 'antd';
 import {
   ShoppingBag, Trash2, Plus, Minus, CreditCard, Wallet, Banknote,
-  Award, MapPin, CheckCircle2
+  Award, MapPin, CheckCircle2, Sparkles, Tag, ArrowRight, ShieldCheck
 } from 'lucide-react';
 import {
   updateQuantity, removeFromCart, setOrderType, setTableNumber,
@@ -64,7 +64,7 @@ export const CartDrawer = ({ open, onClose }) => {
 
       if (data.success) {
         playSuccessChime();
-        message.success('Order placed successfully.');
+        message.success('Order placed successfully!');
 
         if (data.data.loyaltyPointsEarned) {
           const newBalance = (user?.loyaltyPoints || 0) - loyaltyPointsToRedeem + data.data.loyaltyPointsEarned;
@@ -86,27 +86,38 @@ export const CartDrawer = ({ open, onClose }) => {
     }
   };
 
-  const paymentOption = (method, icon, title, subtitle, color) => (
+  const paymentOption = (method, icon, title, subtitle) => (
     <div
-      className={`p-4 rounded-xl border cursor-pointer spring-button flex items-center justify-between ${
-        selectedPaymentMethod === method ? 'border-blue bg-blue-light' : 'border-subtle'
-      }`}
-      style={{
-        padding: 16, borderRadius: 'var(--r-md)', cursor: 'pointer',
-        border: `1px solid ${selectedPaymentMethod === method ? 'var(--blue)' : 'var(--border-subtle)'}`,
-        background: selectedPaymentMethod === method ? 'var(--blue-light)' : 'var(--bg-secondary)',
-      }}
       onClick={() => setSelectedPaymentMethod(method)}
+      style={{
+        padding: '16px 20px',
+        borderRadius: 'var(--r-md)',
+        cursor: 'pointer',
+        border: `1px solid ${selectedPaymentMethod === method ? 'var(--color-primary)' : 'var(--color-hairline)'}`,
+        background: selectedPaymentMethod === method ? 'rgba(0, 113, 227, 0.08)' : 'var(--color-canvas-parchment)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        transition: 'all 0.2s ease',
+        marginBottom: 10
+      }}
     >
-      <div className="flex items-center gap-3">
-        {icon}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ 
+          width: 40, height: 40, borderRadius: '50%', 
+          backgroundColor: selectedPaymentMethod === method ? 'var(--color-primary)' : 'var(--color-surface-pearl)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: selectedPaymentMethod === method ? '#ffffff' : 'var(--color-ink)'
+        }}>
+          {icon}
+        </div>
         <div>
-          <p style={{ fontWeight: 600, fontSize: 14 }}>{title}</p>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{subtitle}</p>
+          <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--color-ink)' }}>{title}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-ink-muted-48)' }}>{subtitle}</div>
         </div>
       </div>
       {selectedPaymentMethod === method && (
-        <CheckCircle2 size={18} color="var(--blue)" />
+        <CheckCircle2 size={20} color="var(--color-primary)" />
       )}
     </div>
   );
@@ -114,142 +125,199 @@ export const CartDrawer = ({ open, onClose }) => {
   return (
     <Drawer
       title={
-        <span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.018em' }}>
-          {t('your_bag')}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ShoppingBag size={20} color="var(--color-primary)" />
+          <span style={{ fontWeight: 600, fontSize: 18, letterSpacing: '-0.018em', color: 'var(--color-ink)' }}>
+            {t('your_bag')} ({items.length})
+          </span>
+        </div>
       }
       placement="right"
       onClose={onClose}
       open={open}
-      width={420}
+      width={440}
+      styles={{
+        header: { borderBottom: '1px solid var(--color-hairline)', padding: '16px 24px' },
+        body: { padding: '24px', backgroundColor: 'var(--color-surface-pearl)' },
+        footer: { borderTop: '1px solid var(--color-hairline)', padding: '20px 24px', backgroundColor: 'var(--color-surface-pearl)' }
+      }}
       footer={
         items.length > 0 ? (
-          <div style={{ padding: '4px 0' }}>
-            <div className="flex justify-between text-sm" style={{ color: 'var(--color-ink-muted-80)', marginBottom: 8 }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, color: 'var(--color-ink-muted-80)', marginBottom: 8 }}>
               <span>{t('subtotal')}</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>${subtotal.toFixed(2)}</span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-sm" style={{ color: 'var(--color-success)', marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, color: 'var(--color-success)', marginBottom: 8 }}>
                 <span>{t('discount')}</span>
-                <span>−${discount.toFixed(2)}</span>
+                <span style={{ fontWeight: 600 }}>−${discount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm" style={{ color: 'var(--color-ink-muted-80)', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, color: 'var(--color-ink-muted-80)', marginBottom: 12 }}>
               <span>{t('tax')}</span>
-              <span>${tax.toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>${tax.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between" style={{ fontSize: 17, fontWeight: 600, marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--color-hairline)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 18, fontWeight: 700, color: 'var(--color-ink)', marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--color-hairline)' }}>
               <span>{t('total_due')}</span>
-              <span>${finalTotal.toFixed(2)}</span>
+              <span style={{ color: 'var(--color-primary)' }}>${finalTotal.toFixed(2)}</span>
             </div>
-            <Button type="primary" block size="large" onClick={() => setPaymentModalOpen(true)} style={{ height: 48, borderRadius: 'var(--r-pill)', fontWeight: 600 }}>
-              {t('place_order')} · ${finalTotal.toFixed(2)}
-            </Button>
+            <button
+              onClick={() => setPaymentModalOpen(true)}
+              className="button-primary"
+              style={{ width: '100%', height: 48, borderRadius: 'var(--r-pill)', fontSize: 16, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <span>{t('place_order')}</span>
+              <span>•</span>
+              <span>${finalTotal.toFixed(2)}</span>
+            </button>
           </div>
         ) : null
       }
     >
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20" style={{ color: 'var(--color-ink-muted-80)' }}>
-          <ShoppingBag size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-          <p style={{ fontSize: 17, fontWeight: 500, marginBottom: 4 }}>{t('empty_bag_title')}</p>
-          <p style={{ fontSize: 14 }}>{t('empty_bag_desc')}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center' }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: 'var(--color-canvas-parchment)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, border: '1px solid var(--color-hairline)' }}>
+            <ShoppingBag size={36} color="var(--color-ink-muted-48)" />
+          </div>
+          <h3 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 8 }}>{t('empty_bag_title')}</h3>
+          <p style={{ fontSize: 14, color: 'var(--color-ink-muted-80)', maxWidth: 280, lineHeight: 1.5, marginBottom: 24 }}>{t('empty_bag_desc')}</p>
+          <button onClick={onClose} className="button-primary" style={{ padding: '10px 24px', fontSize: 14 }}>
+            {t('explore_menu_btn')}
+          </button>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="glass-panel p-4 space-y-3" style={{ background: 'var(--color-surface-pearl)', border: '1px solid var(--color-hairline)', borderRadius: 'var(--r-md)' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink-muted-80)', display: 'block' }}>
-              {t('category')}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          
+          {/* Order Service Selector Card */}
+          <div style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 12 }}>
+              Delivery Mode & Service
             </label>
-            <Radio.Group
-              value={orderType}
-              onChange={(e) => dispatch(setOrderType(e.target.value))}
-              buttonStyle="solid"
-              className="w-full grid grid-cols-3 gap-2"
-            >
-              <Radio.Button value="Dine-In">{t('table_service')}</Radio.Button>
-              <Radio.Button value="Takeaway">{t('takeaway')}</Radio.Button>
-              <Radio.Button value="Delivery">Delivery</Radio.Button>
-            </Radio.Group>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+              {[
+                { type: 'Dine-In', label: t('table_service') },
+                { type: 'Takeaway', label: t('takeaway') },
+                { type: 'Delivery', label: 'Delivery' }
+              ].map((opt) => (
+                <button
+                  key={opt.type}
+                  type="button"
+                  onClick={() => dispatch(setOrderType(opt.type))}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 'var(--r-pill)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: orderType === opt.type ? 'var(--color-primary)' : 'var(--color-hairline)',
+                    backgroundColor: orderType === opt.type ? 'var(--color-primary)' : 'transparent',
+                    color: orderType === opt.type ? '#ffffff' : 'var(--color-ink)',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
 
             {orderType === 'Dine-In' && (
-              <div className="pt-2">
-                <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Table</label>
-                <div className="grid grid-cols-6 gap-2">
+              <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', display: 'block', marginBottom: 8 }}>
+                  Select Table Number
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
                   {['T-01', 'T-02', 'T-03', 'T-04', 'T-05', 'T-06'].map((tbl) => (
-                    <Button
+                    <button
                       key={tbl}
-                      size="small"
-                      type={tableNumber === tbl ? 'primary' : 'default'}
+                      type="button"
                       onClick={() => dispatch(setTableNumber(tbl))}
+                      style={{
+                        padding: '6px 0',
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: '1px solid',
+                        borderColor: tableNumber === tbl ? 'var(--color-primary)' : 'var(--color-hairline)',
+                        backgroundColor: tableNumber === tbl ? 'rgba(0, 113, 227, 0.15)' : 'var(--color-surface-pearl)',
+                        color: tableNumber === tbl ? 'var(--color-primary)' : 'var(--color-ink)',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       {tbl}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
 
             {orderType === 'Delivery' && (
-              <div className="pt-2">
-                <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Address</label>
+              <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', display: 'block', marginBottom: 8 }}>
+                  Delivery Address
+                </label>
                 <Input
                   value={deliveryAddress}
                   onChange={(e) => dispatch(setDeliveryAddress(e.target.value))}
-                  prefix={<MapPin size={14} color="var(--text-tertiary)" />}
-                  placeholder="Delivery address"
+                  prefix={<MapPin size={14} color="var(--color-ink-muted-48)" />}
+                  className="search-input-apple"
+                  placeholder="Enter full campus / office address"
+                  style={{ height: 38 }}
                 />
               </div>
             )}
           </div>
 
+          {/* Cart Items List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink-muted-80)' }}>
-              Items ({items.length})
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Order Items ({items.reduce((s, i) => s + i.quantity, 0)})
+              </span>
+              <button
+                onClick={() => dispatch(clearCart())}
+                style={{ background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Clear All
+              </button>
+            </div>
+
             {items.map((item) => (
               <div
                 key={item.cartId}
-                className="glass-panel"
                 style={{
-                  padding: 12,
+                  padding: 14,
                   display: 'flex',
-                  gap: 12,
+                  gap: 14,
                   alignItems: 'center',
-                  background: 'var(--color-canvas)',
+                  backgroundColor: 'var(--color-canvas-parchment)',
                   border: '1px solid var(--color-hairline)',
-                  borderRadius: 'var(--r-md)'
+                  borderRadius: 'var(--r-md)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                 }}
               >
-                {/* Properly constrained thumbnail */}
+                {/* Thumbnail */}
                 <div
                   style={{
-                    width: 52,
-                    height: 52,
-                    minWidth: 52,
-                    minHeight: 52,
-                    maxWidth: 52,
-                    maxHeight: 52,
-                    borderRadius: 'var(--r-sm)',
+                    width: 54,
+                    height: 54,
+                    minWidth: 54,
+                    minHeight: 54,
+                    borderRadius: 10,
                     overflow: 'hidden',
                     flexShrink: 0,
-                    backgroundColor: 'var(--color-canvas-parchment)',
-                    border: '1px solid var(--color-hairline)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    backgroundColor: 'var(--color-surface-pearl)',
+                    border: '1px solid var(--color-hairline)'
                   }}
                 >
                   <img
                     src={item.image}
                     alt={item.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      display: 'block'
-                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={(e) => {
                       e.currentTarget.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200';
                     }}
@@ -258,151 +326,205 @@ export const CartDrawer = ({ open, onClose }) => {
 
                 {/* Details */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: 'var(--color-ink)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      marginBottom: 2
-                    }}
-                  >
+                  <h4 style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-ink)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.name}
                   </h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: '1px 7px',
-                        borderRadius: 'var(--r-pill)',
-                        backgroundColor: 'var(--color-canvas-parchment)',
-                        border: '1px solid var(--color-hairline)',
-                        color: 'var(--color-ink-muted-80)'
-                      }}
-                    >
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    <span className="chip chip-blue" style={{ fontSize: 11, padding: '1px 8px' }}>
                       {item.selectedSize}
                     </span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink)' }}>
-                      ${item.price.toFixed(2)}
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-ink)' }}>
+                      ${(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
+
                   {item.selectedAddOns?.length > 0 && (
-                    <p
-                      style={{
-                        fontSize: 11.5,
-                        color: 'var(--color-ink-muted-48)',
-                        marginTop: 3,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
+                    <div style={{ fontSize: 11.5, color: 'var(--color-ink-muted-48)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       + {item.selectedAddOns.map(a => a.name).join(', ')}
-                    </p>
+                    </div>
                   )}
                 </div>
 
-                {/* Quantity Controls */}
+                {/* Quantity Pill */}
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 2,
-                    background: 'var(--color-canvas-parchment)',
-                    padding: '2px 4px',
+                    gap: 4,
+                    backgroundColor: 'var(--color-surface-pearl)',
+                    padding: '4px 6px',
                     borderRadius: 'var(--r-pill)',
                     border: '1px solid var(--color-hairline)'
                   }}
                 >
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<Minus size={11} />}
+                  <button
+                    type="button"
                     onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: -1 }))}
-                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-                  />
-                  <span style={{ fontSize: 13, fontWeight: 600, padding: '0 4px', minWidth: 16, textAlign: 'center' }}>
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--color-ink)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span style={{ fontSize: 13, fontWeight: 600, minWidth: 16, textAlign: 'center', color: 'var(--color-ink)' }}>
                     {item.quantity}
                   </span>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<Plus size={11} />}
+                  <button
+                    type="button"
                     onClick={() => dispatch(updateQuantity({ cartId: item.cartId, delta: 1 }))}
-                    style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-                  />
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--color-ink)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={12} />
+                  </button>
                 </div>
 
                 {/* Delete */}
-                <Button
-                  type="text"
-                  danger
-                  icon={<Trash2 size={15} />}
+                <button
+                  type="button"
                   onClick={() => dispatch(removeFromCart(item.cartId))}
-                  style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-                />
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-danger)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    opacity: 0.8,
+                    transition: 'opacity 0.2s'
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           </div>
 
-          <div className="glass-panel p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2" style={{ fontSize: 13, fontWeight: 600 }}>
-                <Award size={16} color="var(--amber)" /> Loyalty points
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                Balance: {user?.loyaltyPoints || 0} pts
+          {/* Loyalty & Promo Code Card */}
+          <div style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: 18, borderRadius: 'var(--r-md)', border: '1px solid var(--color-hairline)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--color-ink)' }}>
+                <Award size={16} color="var(--color-warning)" />
+                <span>Loyalty Points</span>
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--color-ink-muted-48)', fontWeight: 500 }}>
+                Balance: <strong style={{ color: 'var(--color-ink)' }}>{user?.loyaltyPoints || 0} pts</strong>
               </span>
             </div>
-            {user?.loyaltyPoints >= 20 ? (
-              <div className="flex gap-2">
-                <Button size="small" type={loyaltyPointsToRedeem === 50 ? 'primary' : 'default'} onClick={() => dispatch(setLoyaltyPointsToRedeem(loyaltyPointsToRedeem === 50 ? 0 : 50))}>
+
+            {user?.loyaltyPoints >= 50 ? (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => dispatch(setLoyaltyPointsToRedeem(loyaltyPointsToRedeem === 50 ? 0 : 50))}
+                  className={loyaltyPointsToRedeem === 50 ? 'button-primary' : 'button-pearl-capsule'}
+                  style={{ flex: 1, padding: '6px 12px', fontSize: 12 }}
+                >
                   50 pts (−$5)
-                </Button>
-                <Button size="small" type={loyaltyPointsToRedeem === 100 ? 'primary' : 'default'} onClick={() => dispatch(setLoyaltyPointsToRedeem(loyaltyPointsToRedeem === 100 ? 0 : 100))}>
-                  100 pts (−$10)
-                </Button>
+                </button>
+                {user?.loyaltyPoints >= 100 && (
+                  <button
+                    type="button"
+                    onClick={() => dispatch(setLoyaltyPointsToRedeem(loyaltyPointsToRedeem === 100 ? 0 : 100))}
+                    className={loyaltyPointsToRedeem === 100 ? 'button-primary' : 'button-pearl-capsule'}
+                    style={{ flex: 1, padding: '6px 12px', fontSize: 12 }}
+                  >
+                    100 pts (−$10)
+                  </button>
+                )}
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Earn points on every order to unlock discounts.</p>
+              <p style={{ fontSize: 12, color: 'var(--color-ink-muted-48)', marginBottom: 14 }}>
+                Earn 10 points per order to redeem discounts.
+              </p>
             )}
-            <Divider style={{ margin: '12px 0' }} />
-            <div className="flex gap-2">
-              <Input placeholder="Promo code (ORBIT10)" value={promoCode} onChange={(e) => dispatch(setPromoCode(e.target.value))} />
-              <Button onClick={() => {
-                if (promoCode.trim().toUpperCase() === 'ORBIT10') message.success('10% discount applied.');
-                else message.error('Invalid promo code');
-              }}>Apply</Button>
+
+            <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', display: 'block', marginBottom: 8 }}>
+                Promo Discount Code
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Input
+                  placeholder="Promo code (ORBIT10)"
+                  value={promoCode}
+                  onChange={(e) => dispatch(setPromoCode(e.target.value))}
+                  className="search-input-apple"
+                  style={{ height: 38, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (promoCode.trim().toUpperCase() === 'ORBIT10') message.success('10% discount applied!');
+                    else message.error('Invalid promo code');
+                  }}
+                  className="button-dark-utility"
+                  style={{ height: 38, padding: '0 16px', fontSize: 13 }}
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           </div>
+
         </div>
       )}
 
+      {/* Payment Selection Modal */}
       <Modal
-        title="Payment"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CreditCard size={20} color="var(--color-primary)" />
+            <span style={{ fontWeight: 600, fontSize: 18 }}>Select Payment Method</span>
+          </div>
+        }
         open={paymentModalOpen}
         onCancel={() => setPaymentModalOpen(false)}
         footer={null}
-        width={400}
+        width={420}
         centered
       >
-        <div className="space-y-4 py-2">
-          <div className="glass-panel p-4 text-center">
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Amount due</p>
-            <h2 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.022em', marginTop: 4 }}>${finalTotal.toFixed(2)}</h2>
+        <div style={{ paddingTop: 12 }}>
+          <div style={{ backgroundColor: 'var(--color-surface-pearl)', padding: 20, borderRadius: 'var(--r-md)', textAlign: 'center', marginBottom: 20, border: '1px solid var(--color-hairline)' }}>
+            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Total Amount Payable</div>
+            <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-ink)', letterSpacing: '-0.02em' }}>
+              ${finalTotal.toFixed(2)}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            {paymentOption('Card Online', <CreditCard size={20} color="var(--blue)" />, 'Credit or debit card', 'Visa, Mastercard, Amex')}
-            {paymentOption('Wallet', <Wallet size={20} color="var(--purple)" />, 'Digital wallet', 'UPI and wallet payments')}
-            {paymentOption('Cash', <Banknote size={20} color="var(--amber)" />, 'Pay at counter', 'Cash on pickup')}
+          <div style={{ marginBottom: 24 }}>
+            {paymentOption('Card Online', <CreditCard size={20} />, 'Credit or Debit Card', 'Instant encrypted payment via Visa/Mastercard')}
+            {paymentOption('Wallet', <Wallet size={20} />, 'Digital Canteen Wallet', 'Pay using your pre-funded Orbit Wallet')}
+            {paymentOption('Cash', <Banknote size={20} />, 'Pay at Counter / Cash', 'Pay cash directly upon table delivery or counter pickup')}
           </div>
 
-          <Button type="primary" block size="large" loading={isSubmitting} onClick={handleCheckoutSubmit} style={{ height: 48, borderRadius: 980 }}>
-            Place Order · ${finalTotal.toFixed(2)}
-          </Button>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleCheckoutSubmit}
+            className="button-primary"
+            style={{ width: '100%', height: 48, borderRadius: 'var(--r-pill)', fontSize: 16, fontWeight: 600 }}
+          >
+            {isSubmitting ? 'Processing Payment…' : `Confirm & Pay $${finalTotal.toFixed(2)}`}
+          </button>
         </div>
       </Modal>
     </Drawer>

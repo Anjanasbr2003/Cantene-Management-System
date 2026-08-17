@@ -16,12 +16,15 @@ const springTransition = { type: 'spring', bounce: 0, duration: 0.4 };
 
 export const CustomerMenu = () => {
   const { items, selectedCategory, selectedDietary, searchQuery, loading } = useSelector((s) => s.menu);
-  const { items: cartItems, totalAmount, tableNumber, orderType } = useSelector((s) => s.cart);
+  const { items: cartItems, tableNumber, orderType } = useSelector((s) => s.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [customizingItem, setCustomizingItem] = useState(null);
+
+  const totalCartCount = cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
 
   useEffect(() => {
     dispatch(fetchMenuItems());
@@ -73,8 +76,6 @@ export const CustomerMenu = () => {
     playSuccessChime();
     message.success(`${item.name} added to bag`);
   };
-
-  const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <div style={{ backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', paddingBottom: totalCartCount > 0 ? 90 : 40 }}>
@@ -354,7 +355,7 @@ export const CustomerMenu = () => {
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 12, color: 'var(--color-ink-muted-48)' }}>Subtotal</div>
                 <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--color-ink)', fontFamily: 'var(--font-display)' }}>
-                  ${totalAmount?.toFixed(2)}
+                  ${cartSubtotal.toFixed(2)}
                 </div>
               </div>
 
