@@ -17,18 +17,20 @@ router.get('/', (req, res) => {
 // Submit review (Customer)
 router.post('/', verifyToken, (req, res) => {
   const { menuItemId, menuItemName, rating, comment } = req.body;
-  if (!menuItemId || !rating) {
+  if (!menuItemId || rating === undefined) {
     return res.status(400).json({ success: false, message: 'Menu item ID and rating are required.' });
   }
 
+  const numericRating = Math.min(5, Math.max(1, parseInt(rating, 10) || 5));
+
   const newReview = {
     id: 'rev_' + Date.now(),
-    menuItemId,
-    menuItemName: menuItemName || 'Canteen Item',
-    customerName: req.user.name,
-    rating: Number(rating),
-    comment: comment || '',
-    status: 'Approved', // Auto-approved for demo
+    menuItemId: String(menuItemId).slice(0, 50),
+    menuItemName: menuItemName ? String(menuItemName).slice(0, 120) : 'Canteen Item',
+    customerName: req.user?.name ? String(req.user.name).slice(0, 100) : 'Diner',
+    rating: numericRating,
+    comment: comment ? String(comment).slice(0, 500) : '',
+    status: 'Approved',
     createdAt: new Date().toISOString()
   };
 
@@ -36,7 +38,7 @@ router.post('/', verifyToken, (req, res) => {
 
   // Recalculate menu item rating
   const itemReviews = mockStore.reviews.filter(r => r.menuItemId === menuItemId && r.status === 'Approved');
-  const avgRating = itemReviews.reduce((sum, r) => sum + r.rating, 0) / itemReviews.length;
+  const avgRating = itemReviews.reduce((sum, r) => sum + r.rating, 0) / (itemReviews.length || 1);
   
   const menuItem = mockStore.menuItems.find(m => m.id === menuItemId);
   if (menuItem) {
@@ -48,8 +50,18 @@ router.post('/', verifyToken, (req, res) => {
 });
 
 // Admin moderate review
+const ALLOWED_REVIEW_STATUSES = ['Pending', 'Approved', 'Rejected'];
+
 router.patch('/:id/moderate', verifyToken, authorizeRoles('admin'), (req, res) => {
   const { status } = req.body;
+
+  if (!status || !ALLOWED_REVIEW_STATUSES.includes(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid review status. Allowed: ${ALLOWED_REVIEW_STATUSES.join(', ')}`
+    });
+  }
+
   const review = mockStore.reviews.find(r => r.id === req.params.id);
 
   if (!review) {

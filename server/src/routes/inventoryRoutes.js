@@ -52,26 +52,30 @@ router.get('/', async (req, res) => {
   res.json({ success: true, count: items.length, data: items, databaseSource: 'MySQL orbit_canteen' });
 });
 
-// Create inventory item
-router.post('/', async (req, res) => {
+// Create inventory item (Staff & Admin)
+router.post('/', verifyToken, authorizeRoles('staff', 'admin'), async (req, res) => {
   const { sku, name, category, unit, currentStock, reorderLevel, purchasePrice, supplierId, batchNumber, expiryDate } = req.body;
 
   if (!name || !unit || purchasePrice === undefined) {
-    return res.status(400).json({ success: false, message: 'Name, unit, and purchase price required.' });
+    return res.status(400).json({ success: false, message: 'Name, unit, and purchase price are required.' });
   }
+
+  const safeCurrentStock = Math.max(0, parseFloat(currentStock) || 0);
+  const safeReorderLevel = Math.max(0, parseFloat(reorderLevel) || 10);
+  const safePurchasePrice = Math.max(0, parseFloat(purchasePrice) || 0);
 
   const newItem = {
     id: 'inv_' + Date.now(),
-    sku: sku || `INV-${name.substring(0, 4).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
-    name,
-    category: category || 'General Raw',
-    unit,
-    currentStock: Number(currentStock) || 0,
-    reorderLevel: Number(reorderLevel) || 10,
-    purchasePrice: Number(purchasePrice),
-    supplierId: supplierId || 'sup_1',
-    batchNumber: batchNumber || `BT-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`,
-    expiryDate: expiryDate || new Date(Date.now() + 30 * 86400000).toISOString(),
+    sku: sku ? String(sku).slice(0, 50) : `INV-${name.substring(0, 4).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`,
+    name: String(name).slice(0, 120),
+    category: category ? String(category).slice(0, 60) : 'General Raw',
+    unit: String(unit).slice(0, 20),
+    currentStock: safeCurrentStock,
+    reorderLevel: safeReorderLevel,
+    purchasePrice: safePurchasePrice,
+    supplierId: supplierId ? String(supplierId).slice(0, 50) : 'sup_1',
+    batchNumber: batchNumber ? String(batchNumber).slice(0, 50) : `BT-${new Date().getFullYear()}-${Math.floor(10 + Math.random() * 90)}`,
+    expiryDate: expiryDate ? new Date(expiryDate).toISOString() : new Date(Date.now() + 30 * 86400000).toISOString(),
     lastUpdated: new Date().toISOString()
   };
 
@@ -93,7 +97,7 @@ router.post('/', async (req, res) => {
         newItem.expiryDate
       ]
     );
-    console.log(`✅ [MySQL] Inserted inventory item "${newItem.name}" into inventory_items table`);
+    console.log(`✅ [MySQL] Inserted inventory item "${newItem.name}" into inventory_items table by ${req.user.name}`);
   } catch (err) {
     console.error('MySQL insert inventory item warning:', err.message);
   }
@@ -103,15 +107,21 @@ router.post('/', async (req, res) => {
   res.status(201).json({ success: true, data: newItem });
 });
 
-// Log Stock Movement (Stock-In, Stock-Out, Return, Wastage)
-router.post('/movements', async (req, res) => {
+// Log Stock Movement (Stock-In, Consumption, Return, Wastage) (Staff & Admin)
+const ALLOWED_MOVEMENT_TYPES = ['Stock-In', 'Consumption', 'Wastage', 'Return'];
+
+router.post('/movements', verifyToken, authorizeRoles('staff', 'admin'), async (req, res) => {
   const { inventoryId, type, quantity, reason } = req.body;
 
-  if (!inventoryId || !type || quantity === undefined || Number(quantity) === 0) {
-    return res.status(400).json({ success: false, message: 'Valid inventoryId, movement type and non-zero quantity required.' });
+  if (!inventoryId || !type || !ALLOWED_MOVEMENT_TYPES.includes(type) || quantity === undefined || Number(quantity) <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Valid inventoryId, allowed movement type (${ALLOWED_MOVEMENT_TYPES.join(', ')}), and positive quantity required.`
+    });
   }
 
-  const delta = type === 'Stock-In' || type === 'Return' ? Math.abs(Number(quantity)) : -Math.abs(Number(quantity));
+  const numQty = Math.abs(parseFloat(quantity) || 0);
+  const delta = type === 'Stock-In' || type === 'Return' ? numQty : -numQty;
 
   // Update MySQL database current_stock sum
   let updatedStock = 0;
@@ -137,10 +147,10 @@ router.post('/movements', async (req, res) => {
         inventoryId,
         rows[0]?.name || 'Ingredient',
         type,
-        Math.abs(Number(quantity)),
+        numQty,
         rows[0]?.unit || 'units',
-        req.user?.name || 'Staff User',
-        reason || `Manual ${type} entry`
+        req.user.name,
+        reason ? String(reason).slice(0, 255) : `Manual ${type} entry by ${req.user.name}`
       ]
     );
   } catch (err) {
@@ -162,3 +172,4 @@ router.post('/movements', async (req, res) => {
 });
 
 module.exports = router;
+

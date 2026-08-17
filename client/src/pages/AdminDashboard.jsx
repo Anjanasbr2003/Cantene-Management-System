@@ -16,7 +16,12 @@ import {
   ShieldCheck,
   RefreshCw,
   SlidersHorizontal,
-  Trash2
+  Trash2,
+  UserPlus,
+  UserCheck,
+  Shield,
+  UserX,
+  User
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, BarChart, Bar, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,9 +40,13 @@ export const AdminDashboard = () => {
 
   const [metrics, setMetrics] = useState(null);
   const [menuItems, setMenuItems] = useState(defaultSeedMenuItems);
+  const [usersList, setUsersList] = useState([]);
+  const [userRoleFilter, setUserRoleFilter] = useState('All');
   const [loading, setLoading] = useState(false);
   const [createMenuModalOpen, setCreateMenuModalOpen] = useState(false);
+  const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [userForm] = Form.useForm();
 
   const defaultAnalytics = {
     totalRevenue: 2840.50,
@@ -64,16 +73,19 @@ export const AdminDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [resDash, resMenu] = await Promise.all([
+      const [resDash, resMenu, resUsers] = await Promise.all([
         fetch('/api/analytics/dashboard', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/menu')
+        fetch('/api/menu'),
+        fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const dataDash = await resDash.json();
       const dataMenu = await resMenu.json();
+      const dataUsers = await resUsers.json();
 
       if (dataDash.success) setMetrics(dataDash.data);
       if (dataMenu.success && Array.isArray(dataMenu.data)) setMenuItems(dataMenu.data);
+      if (dataUsers.success && Array.isArray(dataUsers.data)) setUsersList(dataUsers.data);
     } catch {
       // Retain fallback data
     }
@@ -143,6 +155,75 @@ export const AdminDashboard = () => {
     dispatch(removeLocalMenuItem(item.id));
     playSuccessChime();
     message.success(`Removed "${item.name}" from catalogue`);
+  };
+
+  const handleCreateUser = async (values) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        message.error(data.message || 'Failed to create user');
+        return;
+      }
+      setUsersList(prev => [data.data, ...prev]);
+      playSuccessChime();
+      message.success(`Account created for ${data.data.name} (${data.data.role.toUpperCase()})`);
+      setCreateUserModalOpen(false);
+      userForm.resetFields();
+    } catch (err) {
+      message.error('Failed to create account.');
+    }
+  };
+
+  const handleUpdateUserRole = async (targetUser, newRole) => {
+    try {
+      const res = await fetch(`/api/users/${targetUser.id}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        message.error(data.message || 'Failed to update user role');
+        return;
+      }
+      setUsersList(prev => prev.map(u => u.id === targetUser.id ? { ...u, role: newRole } : u));
+      playSuccessChime();
+      message.success(`Updated ${targetUser.name}'s role to ${newRole.toUpperCase()}`);
+    } catch (err) {
+      message.error('Failed to update user role.');
+    }
+  };
+
+  const handleDeleteUser = async (targetUser) => {
+    try {
+      const res = await fetch(`/api/users/${targetUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        message.error(data.message || 'Failed to delete account');
+        return;
+      }
+      setUsersList(prev => prev.filter(u => u.id !== targetUser.id));
+      playSuccessChime();
+      message.success(`Revoked account for ${targetUser.name}`);
+    } catch (err) {
+      message.error('Failed to delete account.');
+    }
   };
 
   const exportPDFReport = () => {
@@ -408,6 +489,131 @@ export const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* User & Kitchen Staff Roster Section */}
+        <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 32, marginTop: 40 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--color-primary)', marginBottom: 4 }}>
+                <Users size={14} />
+                <span>ROLE PERMISSIONS & ACCOUNTS</span>
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--color-ink)' }}>
+                User & Kitchen Staff Roster ({usersList.length} accounts)
+              </h3>
+              <p style={{ fontSize: 14, color: 'var(--color-ink-muted-80)' }}>
+                Manage role access levels, onboard new kitchen staff members, or revoke account permissions.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Select
+                value={userRoleFilter}
+                onChange={setUserRoleFilter}
+                style={{ width: 160, height: 38 }}
+                options={[
+                  { value: 'All', label: 'All Roles' },
+                  { value: 'staff', label: '👨‍🍳 Kitchen Staff' },
+                  { value: 'customer', label: '👤 Diners' },
+                  { value: 'admin', label: '🛡️ Admins' }
+                ]}
+              />
+
+              <button onClick={() => setCreateUserModalOpen(true)} className="button-primary" style={{ padding: '8px 18px', fontSize: 14 }}>
+                <UserPlus size={16} />
+                <span>Add Staff / User</span>
+              </button>
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--color-hairline)', color: 'var(--color-ink-muted-48)' }}>
+                  <th style={{ padding: '12px 16px' }}>User</th>
+                  <th style={{ padding: '12px 16px' }}>Role Level</th>
+                  <th style={{ padding: '12px 16px' }}>Phone</th>
+                  <th style={{ padding: '12px 16px' }}>Loyalty Points</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Role Control & Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersList
+                  .filter(u => userRoleFilter === 'All' || u.role.toLowerCase() === userRoleFilter.toLowerCase())
+                  .map((usr) => (
+                    <tr key={usr.id} style={{ borderBottom: '1px solid var(--color-divider-soft)' }}>
+                      <td style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <img 
+                          src={usr.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(usr.name)}`} 
+                          alt={usr.name} 
+                          style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--color-hairline)' }} 
+                        />
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
+                            {usr.name} {usr.id === user?.id && <span style={{ fontSize: 11, color: 'var(--color-primary)', fontWeight: 600 }}>(You)</span>}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--color-ink-muted-48)' }}>{usr.email}</div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <span className={`chip ${usr.role === 'admin' ? 'chip-purple' : usr.role === 'staff' ? 'chip-amber' : 'chip-blue'}`}>
+                          {usr.role === 'admin' ? '🛡️ Admin Executive' : usr.role === 'staff' ? '👨‍🍳 Kitchen Staff' : '👤 Customer Diner'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px', color: 'var(--color-ink-muted-80)' }}>{usr.phone || 'N/A'}</td>
+                      <td style={{ padding: '16px', fontWeight: 600, color: 'var(--color-ink)' }}>{usr.loyaltyPoints || 0} pts</td>
+                      <td style={{ padding: '16px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                          <Select
+                            value={usr.role}
+                            disabled={usr.id === user?.id}
+                            onChange={(newRole) => handleUpdateUserRole(usr, newRole)}
+                            style={{ width: 140 }}
+                            size="small"
+                            options={[
+                              { value: 'staff', label: '👨‍🍳 Staff' },
+                              { value: 'customer', label: '👤 Customer' },
+                              { value: 'admin', label: '🛡️ Admin' }
+                            ]}
+                          />
+
+                          <Popconfirm
+                            title="Revoke Account"
+                            description={`Are you sure you want to delete ${usr.name}'s account?`}
+                            onConfirm={() => handleDeleteUser(usr)}
+                            okText="Yes, Delete"
+                            cancelText="Cancel"
+                            disabled={usr.id === user?.id}
+                            okButtonProps={{ danger: true }}
+                          >
+                            <button
+                              type="button"
+                              disabled={usr.id === user?.id}
+                              className="button-pearl-capsule"
+                              style={{
+                                padding: '5px 9px',
+                                color: usr.id === user?.id ? 'var(--color-ink-muted-48)' : 'var(--color-danger)',
+                                borderColor: 'rgba(255, 69, 58, 0.25)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                fontSize: 12,
+                                opacity: usr.id === user?.id ? 0.4 : 1,
+                                cursor: usr.id === user?.id ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              <UserX size={14} />
+                              <span>Remove</span>
+                            </button>
+                          </Popconfirm>
+                        </div>
+                      </td>
+                    </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
 
       {/* Create New Menu Item Modal */}
@@ -451,6 +657,51 @@ export const AdminDashboard = () => {
             </button>
             <button type="submit" className="button-primary">
               Create Dish
+            </button>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Create New Staff / User Modal */}
+      <Modal
+        open={createUserModalOpen}
+        onCancel={() => setCreateUserModalOpen(false)}
+        footer={null}
+        title="Onboard Kitchen Staff or User Account"
+        centered
+        width={480}
+      >
+        <Form form={userForm} layout="vertical" onFinish={handleCreateUser} style={{ paddingTop: 12 }} initialValues={{ role: 'staff' }}>
+          <Form.Item name="name" label="Full Name" rules={[{ required: true, message: 'Please enter user name' }]}>
+            <Input className="search-input-apple" style={{ height: 40 }} placeholder="e.g. Marcus Vance" />
+          </Form.Item>
+
+          <Form.Item name="email" label="Email Address" rules={[{ required: true, type: 'email', message: 'Valid email required' }]}>
+            <Input className="search-input-apple" style={{ height: 40 }} placeholder="marcus@canteen.io" />
+          </Form.Item>
+
+          <Form.Item name="password" label="Initial Password" rules={[{ required: true, min: 6, message: 'Minimum 6 characters required' }]}>
+            <Input.Password className="search-input-apple" style={{ height: 40 }} placeholder="••••••••" />
+          </Form.Item>
+
+          <Form.Item name="role" label="Account Role Level" rules={[{ required: true }]}>
+            <Select options={[
+              { value: 'staff', label: '👨‍🍳 Kitchen Staff (KDS & Inventory Access)' },
+              { value: 'admin', label: '🛡️ Admin Executive (Full Dashboard Control)' },
+              { value: 'customer', label: '👤 Customer Diner (Standard Access)' }
+            ]} />
+          </Form.Item>
+
+          <Form.Item name="phone" label="Phone Number">
+            <Input className="search-input-apple" style={{ height: 40 }} placeholder="+1 800-555-0142" />
+          </Form.Item>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+            <button type="button" onClick={() => setCreateUserModalOpen(false)} className="button-pearl-capsule">
+              Cancel
+            </button>
+            <button type="submit" className="button-primary">
+              Create Account
             </button>
           </div>
         </Form>

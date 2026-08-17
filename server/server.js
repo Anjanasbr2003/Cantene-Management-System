@@ -9,6 +9,7 @@ require('dotenv').config();
 const { checkDatabaseHealth, pool } = require('./src/config/db');
 
 const authRoutes = require('./src/routes/authRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 const menuRoutes = require('./src/routes/menuRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
@@ -36,16 +37,30 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Basic Rate Limiting
+// Basic API Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
 
+// Strict Rate Limiting for Authentication (Brute Force Protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 login/register attempts per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts. Please try again after 15 minutes.' }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/orders', orderRoutes);
@@ -53,7 +68,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reviews', reviewRoutes);
 
-// Health Check Endpoint
+// Health Check Endpoint (Public)
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
@@ -62,8 +77,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// MySQL Database Status & Telemetry Endpoint
-app.get('/api/db-status', async (req, res) => {
+// MySQL Database Status & Telemetry Endpoint (Admin Protected to prevent info disclosure)
+const { verifyToken, authorizeRoles } = require('./src/middleware/auth');
+app.get('/api/db-status', verifyToken, authorizeRoles('admin'), async (req, res) => {
   try {
     const connection = await pool.getConnection();
     const [tableRows] = await connection.query('SHOW TABLES;');
@@ -94,12 +110,20 @@ app.get('/api/db-status', async (req, res) => {
     res.status(500).json({
       success: false,
       database: process.env.DB_NAME || 'orbit_canteen',
-      engine: 'MySQL',
       status: 'Disconnected / Error',
-      error: err.message,
+      error: process.env.NODE_ENV === 'production' ? 'Database connection error' : err.message,
       timestamp: new Date().toISOString()
     });
   }
+});
+
+// Global Error Handler (Hides internal stack traces in production)
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production' ? 'An internal server error occurred.' : err.message
+  });
 });
 
 // Real-Time Socket.IO Handling

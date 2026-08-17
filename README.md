@@ -506,6 +506,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 <div align="center">
 
 **Built with ❤️ for modern canteen operations**
+**Built By Anjana Sithum With the help of AI and Dedication**
 
 *React 18 · Express.js · MySQL 8 · Socket.IO · Redux Toolkit*
 

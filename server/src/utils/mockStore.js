@@ -7,8 +7,19 @@ const defaultUsers = [
   {
     id: 'usr_admin',
     name: 'Dr. Orion Vance',
+    email: 'admin@orbitcanteen.io',
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
+    role: 'admin',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    phone: '+1 800-555-0199',
+    loyaltyPoints: 1250,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'usr_admin_alt',
+    name: 'Dr. Orion Vance',
     email: 'admin@antigravity.io',
-    passwordHash: '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', // admin123
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
     role: 'admin',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     phone: '+1 800-555-0199',
@@ -18,8 +29,19 @@ const defaultUsers = [
   {
     id: 'usr_staff',
     name: 'Elena Rostova',
+    email: 'staff@orbitcanteen.io',
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
+    role: 'staff',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    phone: '+1 800-555-0142',
+    loyaltyPoints: 450,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'usr_staff_alt',
+    name: 'Elena Rostova',
     email: 'staff@antigravity.io',
-    passwordHash: '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', // staff123
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
     role: 'staff',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
     phone: '+1 800-555-0142',
@@ -29,8 +51,19 @@ const defaultUsers = [
   {
     id: 'usr_customer',
     name: 'Alex Mercer',
+    email: 'customer@orbitcanteen.io',
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
+    role: 'customer',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
+    phone: '+1 800-555-0188',
+    loyaltyPoints: 340,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'usr_customer_alt',
+    name: 'Alex Mercer',
     email: 'customer@antigravity.io',
-    passwordHash: '$2a$10$wT8KjTzG9c9/X9zV.U1xEO5y4jV2bW.oU8V5z7u.U7eW1a9z7y.yS', // customer123
+    passwordHash: '$2a$10$DqxgVAupYb/eHn6iU19MtOmz0r/3TXroh/uVQKuCY2LwnnxbFcrOW', // orbitcanteen2026
     role: 'customer',
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
     phone: '+1 800-555-0188',
