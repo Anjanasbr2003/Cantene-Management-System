@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { Modal, Input, message, Spin, Form, Select } from 'antd';
 import { 
   ChefHat, 
@@ -30,6 +31,7 @@ export const StaffDashboard = () => {
   const { items: inventory } = useSelector((state) => state.inventory);
   const { token, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState('kds');
   
@@ -222,13 +224,13 @@ export const StaffDashboard = () => {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(52, 199, 89, 0.12)', color: '#248a3d', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 <ChefHat size={14} />
-                <span>Kitchen Specialist Station • Live Dispatch</span>
+                <span>{t('kds_badge')}</span>
               </div>
               <h1 className="display-lg" style={{ color: 'var(--color-ink)', marginBottom: 8 }}>
-                Kitchen Display System (KDS) & Inventory
+                {t('kds_title')}
               </h1>
               <p style={{ fontSize: 17, color: 'var(--color-ink-muted-80)' }}>
-                Real-time kitchen order lines and live raw ingredient stock controls.
+                {t('kds_desc')}
               </p>
             </div>
 
@@ -239,7 +241,7 @@ export const StaffDashboard = () => {
                 style={{ fontSize: 14 }}
               >
                 <Plus size={16} />
-                <span>Add New Ingredient</span>
+                <span>{t('add_ingredient')}</span>
               </button>
               <button
                 onClick={() => { dispatch(fetchOrders(token)); dispatch(fetchInventory(token)); message.info('KDS & Stock re-synchronized'); }}
@@ -259,14 +261,14 @@ export const StaffDashboard = () => {
               className={activeTab === 'kds' ? 'button-dark-utility' : 'button-pearl-capsule'}
               style={{ borderRadius: 'var(--r-pill)', padding: '8px 20px', fontSize: 14 }}
             >
-              🍳 Live Kitchen Orders ({displayOrders.filter(o => o.status !== 'Completed').length})
+              🍳 {t('kds_tab_orders')} ({displayOrders.filter(o => o.status !== 'Completed').length})
             </button>
             <button
               onClick={() => setActiveTab('inventory')}
               className={activeTab === 'inventory' ? 'button-dark-utility' : 'button-pearl-capsule'}
               style={{ borderRadius: 'var(--r-pill)', padding: '8px 20px', fontSize: 14 }}
             >
-              📦 Raw Inventory Control ({displayInventory.length})
+              📦 {t('kds_tab_inventory')} ({displayInventory.length})
             </button>
           </div>
 
@@ -285,7 +287,7 @@ export const StaffDashboard = () => {
             <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-ink)' }}>
-                  1. RECEIVED NEW ({ordersByStatus.Received.length})
+                  1. {t('received').toUpperCase()} ({ordersByStatus.Received.length})
                 </span>
                 <span className="chip chip-blue" style={{ fontSize: 11 }}>Action Required</span>
               </div>
@@ -318,7 +320,7 @@ export const StaffDashboard = () => {
                       className="button-primary"
                       style={{ width: '100%', padding: '8px 14px', fontSize: 13 }}
                     >
-                      Start Cooking →
+                      {t('start_cooking')} →
                     </button>
                   </motion.div>
                 ))}
@@ -329,7 +331,7 @@ export const StaffDashboard = () => {
             <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255, 149, 0, 0.35)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-warning)' }}>
-                  2. IN PREPARATION ({ordersByStatus.Preparing.length})
+                  2. {t('preparing').toUpperCase()} ({ordersByStatus.Preparing.length})
                 </span>
                 <span className="chip chip-amber" style={{ fontSize: 11 }}>Cooking</span>
               </div>
@@ -362,7 +364,7 @@ export const StaffDashboard = () => {
                       className="button-primary"
                       style={{ width: '100%', padding: '8px 14px', fontSize: 13, backgroundColor: 'var(--color-success)' }}
                     >
-                      Mark Ready for Dispatch ✓
+                      {t('mark_ready')} ✓
                     </button>
                   </motion.div>
                 ))}
@@ -373,7 +375,7 @@ export const StaffDashboard = () => {
             <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid rgba(52, 199, 89, 0.35)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-success)' }}>
-                  3. READY FOR PICKUP ({ordersByStatus.Ready.length})
+                  3. {t('ready').toUpperCase()} ({ordersByStatus.Ready.length})
                 </span>
                 <span className="chip chip-green" style={{ fontSize: 11 }}>Ready</span>
               </div>
@@ -397,7 +399,7 @@ export const StaffDashboard = () => {
                       className="button-dark-utility"
                       style={{ width: '100%', padding: '8px 14px', fontSize: 13, marginTop: 12 }}
                     >
-                      Complete & Clear Order
+                      {t('complete_order')}
                     </button>
                   </motion.div>
                 ))}
@@ -408,7 +410,7 @@ export const StaffDashboard = () => {
             <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <span className="caption-strong" style={{ color: 'var(--color-ink-muted-80)' }}>
-                  4. RECENT COMPLETED ({ordersByStatus.Completed.length})
+                  4. {t('completed').toUpperCase()} ({ordersByStatus.Completed.length})
                 </span>
               </div>
 

@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Plus, SlidersHorizontal, Star } from 'lucide-react';
 
 const springTransition = { type: 'spring', bounce: 0, duration: 0.3 };
 
 export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
+  const { t } = useTranslation();
   const isOut = !item.isAvailable;
 
   return (
@@ -93,7 +95,7 @@ export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
             }}
           >
             <span className="chip chip-rose" style={{ fontSize: 12, fontWeight: 600 }}>
-              Sold out
+              {t('sold_out')}
             </span>
           </div>
         )}
@@ -103,46 +105,53 @@ export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
         
         {/* Title & Rating */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
           <h3
             style={{
-              fontFamily: 'var(--font-body)',
+              fontFamily: 'var(--font-display)',
               fontSize: 17,
               fontWeight: 600,
-              lineHeight: 1.24,
-              letterSpacing: '-0.374px',
+              lineHeight: 1.25,
+              letterSpacing: '-0.224px',
               color: 'var(--color-ink)'
             }}
           >
             {item.name}
           </h3>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <Star size={12} color="var(--color-warning)" fill="var(--color-warning)" />
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-ink-muted-80)' }}>
-              {item.rating || '4.9'}
-            </span>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--color-ink)',
+              flexShrink: 0
+            }}
+          >
+            <Star size={12} fill="var(--color-warning)" color="var(--color-warning)" />
+            <span>{item.rating?.toFixed(1) || '4.9'}</span>
           </div>
         </div>
 
-        {/* Editorial Description */}
+        {/* Description (Fine print, max 2 lines clamp) */}
         <p
           style={{
-            fontSize: 14,
-            fontWeight: 400,
-            lineHeight: 1.43,
-            letterSpacing: '-0.224px',
+            fontSize: 13,
+            lineHeight: 1.4,
             color: 'var(--color-ink-muted-80)',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            margin: 0
           }}
         >
           {item.description}
         </p>
 
-        {/* Price & Actions Row */}
+        {/* Price & Action Row */}
         <div
           style={{
             display: 'flex',
@@ -154,9 +163,6 @@ export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
           }}
         >
           <div>
-            <div style={{ fontSize: 12, color: 'var(--color-ink-muted-48)', letterSpacing: '-0.12px' }}>
-              From
-            </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span
                 style={{
@@ -190,7 +196,7 @@ export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
                 title="Customize recipe"
               >
                 <SlidersHorizontal size={14} />
-                <span style={{ fontSize: 12 }}>Specs</span>
+                <span style={{ fontSize: 12 }}>{t('specs')}</span>
               </motion.button>
 
               {/* Action Blue Quick Add */}
@@ -202,7 +208,7 @@ export const MenuItemCard = ({ item, onQuickAdd, onCustomize }) => {
                 style={{ height: 36, padding: '0 16px', fontSize: 14 }}
               >
                 <Plus size={16} />
-                <span>Add</span>
+                <span>{t('add_direct')}</span>
               </motion.button>
 
             </div>

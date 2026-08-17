@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
 import { 
   ShoppingBag, 
@@ -29,79 +30,18 @@ export const OrderTracking = () => {
   const { token, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [searchParams] = useSearchParams();
   const trackIdFromUrl = searchParams.get('track');
 
-  const defaultSampleOrders = [
-    {
-      id: 'ORD-9821',
-      customerName: user?.name || 'Alex Mercer',
-      customerId: user?.id || 'usr_customer',
-      orderType: 'Dine-In',
-      tableNumber: 'T-04',
-      status: 'Preparing',
-      items: [
-        { menuItemId: 'menu_3', name: 'Cyber Wagyu Burger', selectedSize: 'Single Stack (M)', price: 16.5, quantity: 1, selectedAddOns: [{ name: 'Fried Farm Egg', price: 1.5 }], specialInstructions: 'Medium rare patty' },
-        { menuItemId: 'menu_1', name: 'Quantum Espresso', selectedSize: 'Double Shot (M)', price: 5.7, quantity: 1, selectedAddOns: [], specialInstructions: '' }
-      ],
-      subtotal: 23.7,
-      discount: 2.0,
-      loyaltyPointsEarned: 23,
-      tax: 1.9,
-      totalAmount: 23.6,
-      paymentMethod: 'Card Online',
-      paymentStatus: 'Paid',
-      estimatedPrepMinutes: 8,
-      createdAt: new Date(Date.now() - 10 * 60000).toISOString()
-    },
-    {
-      id: 'ORD-9822',
-      customerName: user?.name || 'Alex Mercer',
-      customerId: user?.id || 'usr_customer',
-      orderType: 'Dine-In',
-      tableNumber: 'T-02',
-      status: 'Ready',
-      items: [
-        { menuItemId: 'menu_2', name: 'Nebula Matcha Latte', selectedSize: 'Standard (M)', price: 6.0, quantity: 2, selectedAddOns: [{ name: 'Boba Pearls', price: 1.0 }], specialInstructions: 'Extra warm' },
-        { menuItemId: 'menu_6', name: 'Dark Matter Chocolate Brownie', selectedSize: 'Single Slice', price: 7.5, quantity: 1, selectedAddOns: [], specialInstructions: '' }
-      ],
-      subtotal: 21.5,
-      discount: 0,
-      loyaltyPointsEarned: 21,
-      tax: 1.7,
-      totalAmount: 23.2,
-      paymentMethod: 'Apple Pay',
-      paymentStatus: 'Paid',
-      estimatedPrepMinutes: 0,
-      createdAt: new Date(Date.now() - 22 * 60000).toISOString()
-    },
-    {
-      id: 'ORD-9818',
-      customerName: user?.name || 'Alex Mercer',
-      customerId: user?.id || 'usr_customer',
-      orderType: 'Takeaway',
-      tableNumber: null,
-      status: 'Completed',
-      items: [
-        { menuItemId: 'menu_5', name: 'Supernova Truffle Pasta', selectedSize: 'Regular', price: 18.0, quantity: 1, selectedAddOns: [], specialInstructions: '' }
-      ],
-      subtotal: 18.0,
-      discount: 1.8,
-      loyaltyPointsEarned: 18,
-      tax: 1.4,
-      totalAmount: 17.6,
-      paymentMethod: 'Card Online',
-      paymentStatus: 'Paid',
-      estimatedPrepMinutes: 0,
-      createdAt: new Date(Date.now() - 120 * 60000).toISOString()
-    }
-  ];
+  const allOrders = orders || [];
 
-  const allOrders = (orders && orders.length > 0) ? orders : defaultSampleOrders;
 
   useEffect(() => {
-    dispatch(fetchOrders(token));
+    if (token) {
+      dispatch(fetchOrders(token));
+    }
     if (trackIdFromUrl) {
       dispatch(setActiveTrackingOrder(trackIdFromUrl));
     }
@@ -122,10 +62,10 @@ export const OrderTracking = () => {
   };
 
   const stepsList = [
-    { title: 'Received', subtitle: 'Sent to KDS', icon: ShoppingBag },
-    { title: 'Preparing', subtitle: 'Cooking', icon: ChefHat },
-    { title: 'Ready', subtitle: 'Dispatch', icon: Sparkles },
-    { title: 'Completed', subtitle: 'Served', icon: CheckCircle2 }
+    { title: t('step_received'), subtitle: t('step_received_sub'), icon: ShoppingBag },
+    { title: t('step_preparing'), subtitle: t('step_preparing_sub'), icon: ChefHat },
+    { title: t('step_ready'), subtitle: t('step_ready_sub'), icon: Sparkles },
+    { title: t('step_completed'), subtitle: t('step_completed_sub'), icon: CheckCircle2 }
   ];
 
   const currentStep = activeOrder ? getStepIndex(activeOrder.status) : 0;
@@ -223,19 +163,19 @@ export const OrderTracking = () => {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(0, 102, 204, 0.08)', color: 'var(--color-primary)', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 <Clock size={14} />
-                <span>Live Kitchen Dispatch & Order Telemetry</span>
+                <span>{t('radar_badge')}</span>
               </div>
               <h1 className="display-lg" style={{ color: 'var(--color-ink)', marginBottom: 8 }}>
-                Live Order Radar & Tracking
+                {t('radar_title')}
               </h1>
               <p style={{ fontSize: 17, color: 'var(--color-ink-muted-80)' }}>
-                Track active preparations in real time or view historical receipts.
+                {t('radar_desc')}
               </p>
             </div>
 
             <button onClick={() => navigate('/menu')} className="button-primary">
               <ShoppingBag size={16} />
-              <span>Place New Order</span>
+              <span>{t('place_new_order')}</span>
             </button>
           </div>
 
@@ -267,6 +207,22 @@ export const OrderTracking = () => {
 
         </div>
       </section>
+
+      {/* Empty State */}
+      {!activeOrder && (
+        <section className="apple-container-wide" style={{ padding: '80px 24px', textAlign: 'center' }}>
+          <ShoppingBag size={48} color="var(--color-ink-muted-48)" style={{ marginBottom: 16 }} />
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 8 }}>
+            No Orders Found
+          </h2>
+          <p style={{ fontSize: 16, color: 'var(--color-ink-muted-80)', marginBottom: 28 }}>
+            {token ? "You haven't placed any orders yet." : 'Sign in to view your order history.'}
+          </p>
+          <button onClick={() => navigate(token ? '/menu' : '/login')} className="button-primary">
+            {token ? 'Browse Menu & Order' : 'Sign In to Continue'}
+          </button>
+        </section>
+      )}
 
       {/* Main Order Details & Timeline */}
       {activeOrder && (
@@ -300,7 +256,13 @@ export const OrderTracking = () => {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <span className={`chip ${activeOrder.status === 'Preparing' ? 'chip-amber' : activeOrder.status === 'Ready' ? 'chip-green' : 'chip-blue'}`} style={{ fontSize: 13, padding: '6px 14px' }}>
+                  <span className={`chip ${
+                  activeOrder.status === 'Preparing' ? 'chip-amber' 
+                  : activeOrder.status === 'Ready' ? 'chip-green' 
+                  : activeOrder.status === 'Cancelled' ? 'chip-rose'
+                  : activeOrder.status === 'Completed' || activeOrder.status === 'Served' ? 'chip-green'
+                  : 'chip-blue'
+                }`} style={{ fontSize: 13, padding: '6px 14px' }}>
                     ● {activeOrder.status}
                   </span>
                   {activeOrder.status === 'Preparing' && (
@@ -406,7 +368,7 @@ export const OrderTracking = () => {
                   style={{ flex: 1, padding: '10px 16px', fontSize: 14 }}
                 >
                   <FileText size={15} />
-                  <span>Download Invoice PDF</span>
+                  <span>{t('download_invoice')}</span>
                 </button>
 
                 <button
@@ -415,7 +377,7 @@ export const OrderTracking = () => {
                   style={{ flex: 1, padding: '10px 16px', fontSize: 14 }}
                 >
                   <RotateCcw size={15} />
-                  <span>Re-Order Items</span>
+                  <span>{t('reorder_items')}</span>
                 </button>
 
                 {activeOrder.tableNumber && (
@@ -425,7 +387,7 @@ export const OrderTracking = () => {
                     style={{ padding: '10px 16px', fontSize: 14 }}
                   >
                     <PhoneCall size={15} />
-                    <span>Call Table Service</span>
+                    <span>{t('call_service')}</span>
                   </button>
                 )}
               </div>
@@ -449,7 +411,7 @@ export const OrderTracking = () => {
               
               <div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--color-hairline)' }}>
-                  Itemized Order Breakdown
+                  {t('breakdown_title')}
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
@@ -464,7 +426,7 @@ export const OrderTracking = () => {
                             {item.name}
                           </div>
                           <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)' }}>
-                            {item.selectedSize} {item.selectedAddOns?.map(a => `+ ${a.name}`).join(', ')}
+                            {item.selectedSize}{(item.selectedAddOns?.length > 0) ? ' • ' + item.selectedAddOns.map(a => `+ ${a.name}`).join(', ') : ''}
                           </div>
                           {item.specialInstructions && (
                             <div style={{ fontSize: 12, color: 'var(--color-warning)', fontStyle: 'italic', marginTop: 2 }}>
@@ -485,24 +447,24 @@ export const OrderTracking = () => {
               {/* Financial Totals */}
               <div style={{ borderTop: '1px solid var(--color-hairline)', paddingTop: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-ink-muted-80)', marginBottom: 8 }}>
-                  <span>Subtotal</span>
+                  <span>{t('subtotal')}</span>
                   <span>${activeOrder.subtotal?.toFixed(2)}</span>
                 </div>
 
                 {activeOrder.discount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-success)', marginBottom: 8 }}>
-                    <span>Discount / Loyalty</span>
+                    <span>{t('discount')}</span>
                     <span>−${activeOrder.discount?.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--color-ink-muted-80)', marginBottom: 14 }}>
-                  <span>Tax (8%)</span>
+                  <span>{t('tax')}</span>
                   <span>${activeOrder.tax?.toFixed(2)}</span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 600, color: 'var(--color-ink)', paddingTop: 12, borderTop: '1px solid var(--color-divider-soft)' }}>
-                  <span>Total Paid ({activeOrder.paymentMethod})</span>
+                  <span>{t('total_paid')} ({activeOrder.paymentMethod})</span>
                   <span style={{ color: 'var(--color-primary)', fontFamily: 'var(--font-display)' }}>
                     ${activeOrder.totalAmount?.toFixed(2)}
                   </span>

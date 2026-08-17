@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { message, Modal, Spin } from 'antd';
 import { 
   QrCode, 
@@ -28,6 +29,7 @@ export const TableQRView = () => {
   const { user, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [activeModalTable, setActiveModalTable] = useState(null);
@@ -86,16 +88,24 @@ export const TableQRView = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Available':
-        return <span className="chip chip-green">● Available</span>;
+        return <span className="chip chip-green">● {t('available')}</span>;
       case 'Occupied':
-        return <span className="chip chip-amber">● Occupied</span>;
+        return <span className="chip chip-amber">● {t('occupied')}</span>;
       case 'Reserved':
-        return <span className="chip chip-blue">● Reserved</span>;
+        return <span className="chip chip-blue">● {t('reserved')}</span>;
       case 'Cleaning':
       default:
-        return <span className="chip" style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--color-ink-muted-80)' }}>● Cleaning</span>;
+        return <span className="chip" style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--color-ink-muted-80)' }}>● {t('cleaning')}</span>;
     }
   };
+
+  const filterOptions = [
+    { key: 'All', label: t('all') },
+    { key: 'Available', label: t('available') },
+    { key: 'Occupied', label: t('occupied') },
+    { key: 'Reserved', label: t('reserved') },
+    { key: 'Cleaning', label: t('cleaning') }
+  ];
 
   return (
     <div 
@@ -121,13 +131,13 @@ export const TableQRView = () => {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(0, 102, 204, 0.08)', color: 'var(--color-primary)', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 <QrCode size={14} />
-                <span>Touchless Tableside QR System</span>
+                <span>{t('tables_badge')}</span>
               </div>
               <h1 className="display-lg" style={{ color: 'var(--color-ink)', marginBottom: 8 }}>
-                Canteen Table Management
+                {t('tables_title')}
               </h1>
               <p style={{ fontSize: 17, color: 'var(--color-ink-muted-80)', maxWidth: 640 }}>
-                Live seating telemetry, instant QR scan simulation, and real-time table status control.
+                {t('tables_desc')}
               </p>
             </div>
 
@@ -138,19 +148,19 @@ export const TableQRView = () => {
                 style={{ padding: '8px 16px', fontSize: 14, backdropFilter: 'blur(10px)' }}
               >
                 <RefreshCw size={14} />
-                <span>Refresh Live Status</span>
+                <span>{t('refresh_status')}</span>
               </button>
             </div>
           </div>
 
           {/* Filter Pills */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 28 }}>
-            {['All', 'Available', 'Occupied', 'Reserved', 'Cleaning'].map((status) => {
-              const active = selectedFilter === status;
+            {filterOptions.map((opt) => {
+              const active = selectedFilter === opt.key;
               return (
                 <button
-                  key={status}
-                  onClick={() => setSelectedFilter(status)}
+                  key={opt.key}
+                  onClick={() => setSelectedFilter(opt.key)}
                   className={active ? 'button-dark-utility' : 'button-pearl-capsule'}
                   style={{
                     borderRadius: 'var(--r-pill)',
@@ -159,7 +169,7 @@ export const TableQRView = () => {
                     fontWeight: active ? 600 : 400
                   }}
                 >
-                  {status}
+                  {opt.label}
                 </button>
               );
             })}
@@ -252,10 +262,10 @@ export const TableQRView = () => {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink)', marginBottom: 4 }}>
-                        {tbl.status === 'Occupied' ? `Active: ${tbl.occupantName || 'Diner'}` : tbl.status === 'Reserved' ? `Reserved: ${tbl.reservedFor}` : 'Ready for Diner'}
+                        {tbl.status === 'Occupied' ? `Active: ${tbl.occupantName || 'Diner'}` : tbl.status === 'Reserved' ? `Reserved: ${tbl.reservedFor}` : t('ready_for_diner')}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--color-ink-muted-80)' }}>
-                        Tap to inspect & update status
+                        {t('station')} {tbl.number} • {tbl.capacity} {t('seats')}
                       </div>
                     </div>
                   </div>
@@ -267,7 +277,7 @@ export const TableQRView = () => {
                       className="button-primary"
                       style={{ flex: 1, padding: '8px 14px', fontSize: 13 }}
                     >
-                      <span>Simulate Scan & Order</span>
+                      <span>{t('simulate_scan')}</span>
                       <ChevronRight size={14} />
                     </button>
 
@@ -276,7 +286,7 @@ export const TableQRView = () => {
                       className="button-pearl-capsule"
                       style={{ padding: '8px 12px', fontSize: 13 }}
                     >
-                      QR Details
+                      {t('qr_details')}
                     </button>
                   </div>
 
@@ -300,12 +310,12 @@ export const TableQRView = () => {
           <div style={{ textAlign: 'center', padding: '12px 8px' }}>
             
             <div style={{ marginBottom: 16 }}>
-              <span className="chip chip-blue" style={{ marginBottom: 8 }}>Table Telemetry & QR</span>
+              <span className="chip chip-blue" style={{ marginBottom: 8 }}>{t('table_telemetry')}</span>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: 'var(--color-ink)' }}>
-                Station {activeModalTable.number}
+                {t('station')} {activeModalTable.number}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--color-ink-muted-80)' }}>
-                Capacity: {activeModalTable.capacity} Seats • Status: <strong>{activeModalTable.status}</strong>
+                {t('seats')}: {activeModalTable.capacity} • {activeModalTable.status}
               </p>
             </div>
 
@@ -335,7 +345,7 @@ export const TableQRView = () => {
             {/* Live Status Switcher Buttons */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                Set Real-Time Table Status
+                {t('set_status')}
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -343,25 +353,25 @@ export const TableQRView = () => {
                   onClick={() => handleUpdateStatus(activeModalTable.id || activeModalTable.number, 'Available')}
                   className={activeModalTable.status === 'Available' ? 'button-dark-utility' : 'button-pearl-capsule'}
                 >
-                  ● Mark Available
+                  ● {t('available')}
                 </button>
                 <button
                   onClick={() => handleUpdateStatus(activeModalTable.id || activeModalTable.number, 'Occupied')}
                   className={activeModalTable.status === 'Occupied' ? 'button-dark-utility' : 'button-pearl-capsule'}
                 >
-                  ● Mark Occupied
+                  ● {t('occupied')}
                 </button>
                 <button
                   onClick={() => handleUpdateStatus(activeModalTable.id || activeModalTable.number, 'Reserved')}
                   className={activeModalTable.status === 'Reserved' ? 'button-dark-utility' : 'button-pearl-capsule'}
                 >
-                  ● Reserve Table
+                  ● {t('reserved')}
                 </button>
                 <button
                   onClick={() => handleUpdateStatus(activeModalTable.id || activeModalTable.number, 'Cleaning')}
                   className={activeModalTable.status === 'Cleaning' ? 'button-dark-utility' : 'button-pearl-capsule'}
                 >
-                  ● Cleaning Mode
+                  ● {t('cleaning')}
                 </button>
               </div>
             </div>
@@ -375,7 +385,7 @@ export const TableQRView = () => {
               className="button-primary"
               style={{ width: '100%', height: 44 }}
             >
-              Simulate QR Scan & Open Menu
+              {t('open_menu_sim')}
             </button>
 
           </div>

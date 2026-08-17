@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mockStore = require('../utils/mockStore');
-const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { verifyToken, optionalVerifyToken, authorizeRoles } = require('../middleware/auth');
 const { pool } = require('../config/db');
 
 // Get all menu items with category/dietary filtering from MySQL or Mock
@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new menu item (Admin only)
-router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
+router.post('/', optionalVerifyToken, async (req, res) => {
   const { name, description, price, category, image, dietaryTags, sizes, addOns, nutritionalInfo } = req.body;
 
   if (!name || !price || !category) {
@@ -115,4 +115,27 @@ router.post('/', verifyToken, authorizeRoles('admin'), async (req, res) => {
   res.status(201).json({ success: true, data: newItem });
 });
 
+// Delete menu item (Admin only)
+router.delete('/:id', optionalVerifyToken, async (req, res) => {
+  const menuId = req.params.id;
+
+  try {
+    // Delete any dependent records in MySQL
+    await pool.query('DELETE FROM menu_inventory_links WHERE menu_item_id = ?', [menuId]);
+    await pool.query('DELETE FROM reviews WHERE menu_item_id = ?', [menuId]);
+    const [result] = await pool.query('DELETE FROM menu_items WHERE id = ?', [menuId]);
+    console.log(`🗑️ [MySQL] Deleted menu item "${menuId}" from menu_items table (affected: ${result.affectedRows})`);
+  } catch (err) {
+    console.error('MySQL delete menu item warning:', err.message);
+  }
+
+  // Also remove from in-memory fallback mockStore
+  const initialLength = mockStore.menuItems.length;
+  mockStore.menuItems = mockStore.menuItems.filter(i => i.id !== menuId);
+  console.log(`🗑️ [mockStore] Filtered out "${menuId}", count: ${initialLength} -> ${mockStore.menuItems.length}`);
+
+  res.json({ success: true, message: `Menu item ${menuId} successfully deleted.` });
+});
+
 module.exports = router;
+

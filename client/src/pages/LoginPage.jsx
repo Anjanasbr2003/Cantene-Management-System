@@ -3,17 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { message, Form, Input } from 'antd';
 import { 
-  Shield, 
-  ChefHat, 
-  User, 
-  ArrowRight, 
   Sparkles, 
   Lock, 
   Mail,
-  QrCode
+  ShieldCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { setDemoRole, loginUser } from '../store/authSlice';
+import { loginUser } from '../store/authSlice';
 import { playSuccessChime } from '../utils/audio';
 
 const springTransition = { type: 'spring', bounce: 0, duration: 0.4 };
@@ -24,18 +20,7 @@ export const LoginPage = () => {
   const { loading, error } = useSelector((state) => state.auth);
 
   const [form] = Form.useForm();
-  const [activeTab, setActiveTab] = useState('customer');
 
-  const handleDemoRoleSelect = (role) => {
-    setActiveTab(role);
-    dispatch(setDemoRole(role));
-    playSuccessChime();
-    message.success(`Switched to Demo Role: ${role.toUpperCase()}`);
-
-    if (role === 'admin') navigate('/admin');
-    else if (role === 'staff') navigate('/staff');
-    else navigate('/menu');
-  };
 
   const handleLoginSubmit = async (values) => {
     const resultAction = await dispatch(loginUser(values));
@@ -107,65 +92,23 @@ export const LoginPage = () => {
               </p>
             </div>
 
-            {/* 1-Tap Demo Switcher Pills */}
+            {/* Feature highlights */}
             <div>
               <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255, 255, 255, 0.6)', marginBottom: 12 }}>
-                1-Tap Instant Demo Access
+                Platform Features
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={() => handleDemoRoleSelect('customer')}
-                  style={{
-                    backgroundColor: activeTab === 'customer' ? 'var(--color-primary)' : 'rgba(255,255,255,0.15)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: 'var(--r-pill)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <User size={13} style={{ display: 'inline', marginRight: 6 }} />
-                  Diner Mode
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoRoleSelect('staff')}
-                  style={{
-                    backgroundColor: activeTab === 'staff' ? 'var(--color-primary)' : 'rgba(255,255,255,0.15)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: 'var(--r-pill)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <ChefHat size={13} style={{ display: 'inline', marginRight: 6 }} />
-                  Kitchen Staff
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoRoleSelect('admin')}
-                  style={{
-                    backgroundColor: activeTab === 'admin' ? 'var(--color-primary)' : 'rgba(255,255,255,0.15)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: 'var(--r-pill)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Shield size={13} style={{ display: 'inline', marginRight: 6 }} />
-                  Executive Admin
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  'Touchless QR tableside ordering',
+                  'Live kitchen display & order queue',
+                  'Real-time inventory management',
+                  'Executive analytics dashboard'
+                ].map((feat) => (
+                  <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.82)' }}>
+                    <ShieldCheck size={13} color="var(--color-primary-on-dark)" style={{ flexShrink: 0 }} />
+                    <span>{feat}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -177,17 +120,17 @@ export const LoginPage = () => {
                 Sign In with Canteen Pass
               </h3>
               <p style={{ fontSize: 14, color: 'var(--color-ink-muted-80)' }}>
-                Enter your credentials or click any demo role pill on the left.
+                Enter your registered credentials to access your account.
               </p>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleLoginSubmit}>
-              <Form.Item name="email" label="Email Address" rules={[{ required: true, message: 'Please enter email' }]} initialValue="customer@orbitcanteen.io">
-                <Input prefix={<Mail size={16} color="var(--color-ink-muted-48)" />} className="search-input-apple" style={{ height: 44 }} placeholder="e.g. diner@canteen.io" />
+              <Form.Item name="email" label="Email Address" rules={[{ required: true, message: 'Please enter your email' }]}>
+                <Input prefix={<Mail size={16} color="var(--color-ink-muted-48)" />} className="search-input-apple" style={{ height: 44 }} placeholder="your@email.com" autoComplete="email" />
               </Form.Item>
 
-              <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please enter password' }]} initialValue="customer123">
-                <Input.Password prefix={<Lock size={16} color="var(--color-ink-muted-48)" />} className="search-input-apple" style={{ height: 44 }} placeholder="••••••••" />
+              <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Please enter your password' }]}>
+                <Input.Password prefix={<Lock size={16} color="var(--color-ink-muted-48)" />} className="search-input-apple" style={{ height: 44 }} placeholder="••••••••" autoComplete="current-password" />
               </Form.Item>
 
               <button
