@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Plus, Minus, X, Check } from 'lucide-react';
 
 const spring = { type: 'spring', bounce: 0, duration: 0.32 };
 
 export const CustomizationModal = ({ open, item, onClose, onAddToCart }) => {
+  const { t } = useTranslation();
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedAddOns, setSelectedAddOns] = useState([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -141,7 +143,7 @@ export const CustomizationModal = ({ open, item, onClose, onAddToCart }) => {
               {item.sizes && item.sizes.length > 0 && (
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                    Select Portion / Serving Size
+                    {t('portion_size')}
                   </label>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {item.sizes.map((s) => {
@@ -171,7 +173,7 @@ export const CustomizationModal = ({ open, item, onClose, onAddToCart }) => {
               {item.addOns && item.addOns.length > 0 && (
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
-                    Optional Add-Ons & Enhancements
+                    {t('add_ons')}
                   </label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {item.addOns.map((addOn) => {
@@ -224,13 +226,13 @@ export const CustomizationModal = ({ open, item, onClose, onAddToCart }) => {
               {/* Special instructions */}
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Kitchen Special Notes
+                  {t('special_notes')}
                 </label>
                 <input
                   type="text"
                   value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)}
-                  placeholder="e.g. Extra hot, oat milk substitute, dressing on side"
+                  placeholder={t('special_notes_placeholder')}
                   className="search-input-apple"
                   style={{ height: 40, fontSize: 14 }}
                 />
@@ -272,7 +274,7 @@ export const CustomizationModal = ({ open, item, onClose, onAddToCart }) => {
                   className="button-primary"
                   style={{ flex: 1, height: 44, fontSize: 15 }}
                 >
-                  <span>Add to Bag • ${totalPrice.toFixed(2)}</span>
+                  <span>{t('add_to_bag')} • ${totalPrice.toFixed(2)}</span>
                 </button>
               </div>
 

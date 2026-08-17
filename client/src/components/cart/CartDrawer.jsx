@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Drawer, Button, Input, Radio, Tag, message, Modal, Divider } from 'antd';
 import {
   ShoppingBag, Trash2, Plus, Minus, CreditCard, Wallet, Banknote,
@@ -20,6 +21,7 @@ export const CartDrawer = ({ open, onClose }) => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Card Online');
@@ -36,7 +38,7 @@ export const CartDrawer = ({ open, onClose }) => {
 
   const handleCheckoutSubmit = async () => {
     if (!items.length) {
-      message.error('Your cart is empty.');
+      message.error(t('empty_bag_title'));
       return;
     }
 
@@ -99,11 +101,13 @@ export const CartDrawer = ({ open, onClose }) => {
       <div className="flex items-center gap-3">
         {icon}
         <div>
-          <h5 style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</h5>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{subtitle}</p>
+          <p style={{ fontWeight: 600, fontSize: 14 }}>{title}</p>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{subtitle}</p>
         </div>
       </div>
-      {selectedPaymentMethod === method && <CheckCircle2 size={20} color="var(--blue)" />}
+      {selectedPaymentMethod === method && (
+        <CheckCircle2 size={18} color="var(--blue)" />
+      )}
     </div>
   );
 
@@ -111,7 +115,7 @@ export const CartDrawer = ({ open, onClose }) => {
     <Drawer
       title={
         <span style={{ fontWeight: 600, fontSize: 17, letterSpacing: '-0.018em' }}>
-          Your bag
+          {t('your_bag')}
         </span>
       }
       placement="right"
@@ -121,42 +125,42 @@ export const CartDrawer = ({ open, onClose }) => {
       footer={
         items.length > 0 ? (
           <div style={{ padding: '4px 0' }}>
-            <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>
-              <span>Subtotal</span>
+            <div className="flex justify-between text-sm" style={{ color: 'var(--color-ink-muted-80)', marginBottom: 8 }}>
+              <span>{t('subtotal')}</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-sm" style={{ color: 'var(--green)', marginBottom: 8 }}>
-                <span>Discount</span>
+              <div className="flex justify-between text-sm" style={{ color: 'var(--color-success)', marginBottom: 8 }}>
+                <span>{t('discount')}</span>
                 <span>−${discount.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
-              <span>Tax (8%)</span>
+            <div className="flex justify-between text-sm" style={{ color: 'var(--color-ink-muted-80)', marginBottom: 12 }}>
+              <span>{t('tax')}</span>
               <span>${tax.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between" style={{ fontSize: 17, fontWeight: 600, marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--border-subtle)' }}>
-              <span>Total</span>
+            <div className="flex justify-between" style={{ fontSize: 17, fontWeight: 600, marginBottom: 16, paddingTop: 12, borderTop: '1px solid var(--color-hairline)' }}>
+              <span>{t('total_due')}</span>
               <span>${finalTotal.toFixed(2)}</span>
             </div>
-            <Button type="primary" block size="large" onClick={() => setPaymentModalOpen(true)} style={{ height: 48, borderRadius: 980 }}>
-              Check Out · ${finalTotal.toFixed(2)}
+            <Button type="primary" block size="large" onClick={() => setPaymentModalOpen(true)} style={{ height: 48, borderRadius: 'var(--r-pill)', fontWeight: 600 }}>
+              {t('place_order')} · ${finalTotal.toFixed(2)}
             </Button>
           </div>
         ) : null
       }
     >
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20" style={{ color: 'var(--text-secondary)' }}>
+        <div className="flex flex-col items-center justify-center py-20" style={{ color: 'var(--color-ink-muted-80)' }}>
           <ShoppingBag size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-          <p style={{ fontSize: 17, fontWeight: 500, marginBottom: 4 }}>Your bag is empty</p>
-          <p style={{ fontSize: 14 }}>Add items from the menu to get started.</p>
+          <p style={{ fontSize: 17, fontWeight: 500, marginBottom: 4 }}>{t('empty_bag_title')}</p>
+          <p style={{ fontSize: 14 }}>{t('empty_bag_desc')}</p>
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="glass-panel p-4 space-y-3">
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}>
-              Order type
+          <div className="glass-panel p-4 space-y-3" style={{ background: 'var(--color-surface-pearl)', border: '1px solid var(--color-hairline)', borderRadius: 'var(--r-md)' }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-ink-muted-80)', display: 'block' }}>
+              {t('category')}
             </label>
             <Radio.Group
               value={orderType}
@@ -164,8 +168,8 @@ export const CartDrawer = ({ open, onClose }) => {
               buttonStyle="solid"
               className="w-full grid grid-cols-3 gap-2"
             >
-              <Radio.Button value="Dine-In">Dine-In</Radio.Button>
-              <Radio.Button value="Takeaway">Takeaway</Radio.Button>
+              <Radio.Button value="Dine-In">{t('table_service')}</Radio.Button>
+              <Radio.Button value="Takeaway">{t('takeaway')}</Radio.Button>
               <Radio.Button value="Delivery">Delivery</Radio.Button>
             </Radio.Group>
 

@@ -44,66 +44,18 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-const initialUser = savedUser
-  ? JSON.parse(savedUser)
-  : {
-      id: 'usr_customer',
-      name: 'Alex Mercer',
-      email: 'customer@antigravity.io',
-      role: 'customer',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
-      loyaltyPoints: 340,
-      phone: '+1 800-555-0188'
-    };
+const initialUser = savedUser ? JSON.parse(savedUser) : null;
+
 
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    token: savedToken || 'demo_token_customer',
+    token: savedToken || null,
     user: initialUser,
     loading: false,
     error: null
   },
   reducers: {
-    setDemoRole: (state, action) => {
-      const role = action.payload;
-      if (role === 'admin') {
-        state.user = {
-          id: 'usr_admin',
-          name: 'Dr. Orion Vance',
-          email: 'admin@antigravity.io',
-          role: 'admin',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          loyaltyPoints: 1250,
-          phone: '+1 800-555-0199'
-        };
-        state.token = 'demo_token_admin';
-      } else if (role === 'staff') {
-        state.user = {
-          id: 'usr_staff',
-          name: 'Elena Rostova',
-          email: 'staff@antigravity.io',
-          role: 'staff',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-          loyaltyPoints: 450,
-          phone: '+1 800-555-0142'
-        };
-        state.token = 'demo_token_staff';
-      } else {
-        state.user = {
-          id: 'usr_customer',
-          name: 'Alex Mercer',
-          email: 'customer@antigravity.io',
-          role: 'customer',
-          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150',
-          loyaltyPoints: 340,
-          phone: '+1 800-555-0188'
-        };
-        state.token = 'demo_token_customer';
-      }
-      localStorage.setItem('orbit_token', state.token);
-      localStorage.setItem('orbit_user', JSON.stringify(state.user));
-    },
     logout: (state) => {
       state.token = null;
       state.user = null;
@@ -162,5 +114,5 @@ const authSlice = createSlice({
   }
 });
 
-export const { setDemoRole, logout, clearAuthError, updateLoyaltyPoints } = authSlice.actions;
+export const { logout, clearAuthError, updateLoyaltyPoints } = authSlice.actions;
 export default authSlice.reducer;

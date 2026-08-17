@@ -21,7 +21,7 @@ import {
   Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { logout, setDemoRole } from '../../store/authSlice';
+import { logout } from '../../store/authSlice';
 import { toggleTheme } from '../../store/themeSlice';
 
 export const NavHeader = ({ onOpenCart }) => {
@@ -45,18 +45,12 @@ export const NavHeader = ({ onOpenCart }) => {
     navigate('/login');
   };
 
-  const handleSwitchDemoRole = (role) => {
-    dispatch(setDemoRole(role));
-    message.success(`Switched role to ${role.toUpperCase()}`);
-    if (role === 'admin') navigate('/admin');
-    else if (role === 'staff') navigate('/staff');
-    else navigate('/menu');
-  };
 
   const toggleLanguage = () => {
-    const next = i18n.language === 'en' ? 'es' : 'en';
+    const next = i18n.language === 'en' ? 'si' : 'en';
     i18n.changeLanguage(next);
-    message.info(`Language switched to ${next.toUpperCase()}`);
+    localStorage.setItem('canteen_lang', next);
+    message.info(next === 'si' ? 'භාෂාව සිංහලට මාරු කරන ලදී' : 'Language switched to English');
   };
 
   const handleThemeToggle = () => {
@@ -68,21 +62,21 @@ export const NavHeader = ({ onOpenCart }) => {
   const getSubNavTitle = () => {
     switch (location.pathname) {
       case '/menu':
-        return 'Menu Gallery';
+        return t('subnav_menu');
       case '/staff':
-        return 'Kitchen Display System';
+        return t('subnav_staff');
       case '/admin':
-        return 'Executive Analytics';
+        return t('subnav_admin');
       case '/tables':
-        return 'Table QR & Dine-In';
+        return t('subnav_tables');
       case '/orders':
-        return 'Order Tracking & Status';
+        return t('subnav_orders');
       case '/login':
-        return 'Canteen Access Authentication';
+        return t('subnav_login');
       case '/register':
-        return 'New Diner Registration';
+        return t('subnav_register');
       default:
-        return 'Canteen Management System';
+        return t('app_title');
     }
   };
 
@@ -92,32 +86,13 @@ export const NavHeader = ({ onOpenCart }) => {
       disabled: true,
       label: (
         <div style={{ padding: '4px 0' }}>
-          <div style={{ fontWeight: 600, color: 'var(--color-ink)', fontSize: 14 }}>{user?.name || 'Guest Diner'}</div>
+          <div style={{ fontWeight: 600, color: 'var(--color-ink)', fontSize: 14 }}>{user?.name || t('guest')}</div>
           <div style={{ fontSize: 12, color: 'var(--color-ink-muted-48)' }}>{user?.email || 'Not signed in'}</div>
           <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 9999, backgroundColor: 'rgba(0, 102, 204, 0.1)', color: 'var(--color-primary)', fontSize: 11, fontWeight: 600 }}>
-            {currentRole.toUpperCase()} MODE
+            {currentRole.toUpperCase()} {t('mode')}
           </div>
         </div>
       )
-    },
-    { type: 'divider' },
-    {
-      key: 'switch-admin',
-      icon: <ShieldCheck size={14} color="var(--color-primary)" />,
-      label: 'Switch to Admin (Dr. Orion)',
-      onClick: () => handleSwitchDemoRole('admin')
-    },
-    {
-      key: 'switch-staff',
-      icon: <ChefHat size={14} color="var(--color-success)" />,
-      label: 'Switch to Kitchen Staff (Elena)',
-      onClick: () => handleSwitchDemoRole('staff')
-    },
-    {
-      key: 'switch-customer',
-      icon: <User size={14} color="var(--color-warning)" />,
-      label: 'Switch to Diner (Alex)',
-      onClick: () => handleSwitchDemoRole('customer')
     },
     { type: 'divider' },
     isLoggedIn
@@ -125,13 +100,13 @@ export const NavHeader = ({ onOpenCart }) => {
           key: 'logout-btn',
           icon: <LogOut size={14} color="var(--color-danger)" />,
           danger: true,
-          label: 'Sign Out',
+          label: t('sign_out'),
           onClick: handleLogout
         }
       : {
           key: 'login-btn',
           icon: <LogIn size={14} color="var(--color-primary)" />,
-          label: 'Sign In',
+          label: t('sign_in'),
           onClick: () => navigate('/login')
         }
   ];
@@ -182,7 +157,7 @@ export const NavHeader = ({ onOpenCart }) => {
               🍱
             </div>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, letterSpacing: '-0.3px' }}>
-              Canteen Management System
+              {t('app_title')}
             </span>
           </Link>
 
@@ -193,7 +168,7 @@ export const NavHeader = ({ onOpenCart }) => {
               className={`liquid-nav-link ${location.pathname === '/menu' ? 'active' : ''}`}
             >
               <Utensils size={15} />
-              <span>Menu Gallery</span>
+              <span>{t('nav_menu')}</span>
             </Link>
 
             <Link
@@ -201,7 +176,7 @@ export const NavHeader = ({ onOpenCart }) => {
               className={`liquid-nav-link ${location.pathname === '/tables' ? 'active' : ''}`}
             >
               <QrCode size={15} />
-              <span>Table QR</span>
+              <span>{t('nav_tables')}</span>
             </Link>
 
             <Link
@@ -209,7 +184,7 @@ export const NavHeader = ({ onOpenCart }) => {
               className={`liquid-nav-link ${location.pathname === '/orders' ? 'active' : ''}`}
             >
               <ShoppingBag size={15} />
-              <span>Live Orders</span>
+              <span>{t('nav_orders')}</span>
             </Link>
 
             {/* Staff Link */}
@@ -218,7 +193,7 @@ export const NavHeader = ({ onOpenCart }) => {
               className={`liquid-nav-link ${location.pathname === '/staff' ? 'active' : ''}`}
             >
               <ChefHat size={15} />
-              <span>Kitchen KDS</span>
+              <span>{t('nav_staff')}</span>
             </Link>
 
             {/* Admin Link */}
@@ -227,7 +202,7 @@ export const NavHeader = ({ onOpenCart }) => {
               className={`liquid-nav-link ${location.pathname === '/admin' ? 'active' : ''}`}
             >
               <BarChart3 size={15} />
-              <span>Executive Admin</span>
+              <span>{t('nav_admin')}</span>
             </Link>
           </nav>
 
@@ -254,7 +229,7 @@ export const NavHeader = ({ onOpenCart }) => {
               }}
             >
               <Globe size={15} color="var(--color-primary-on-dark)" />
-              <span>{i18n.language === 'en' ? 'EN' : 'ES'}</span>
+              <span style={{ fontWeight: 600 }}>{i18n.language === 'si' ? 'සිං (SI)' : 'EN'}</span>
             </motion.button>
 
             {/* Light / Dark Mode Toggle Button */}
@@ -471,7 +446,7 @@ export const NavHeader = ({ onOpenCart }) => {
                 }}
               >
                 <Utensils size={14} color="var(--color-primary)" />
-                <span>View Menu</span>
+                <span>{t('nav_menu')}</span>
               </Link>
             )}
 
@@ -481,7 +456,7 @@ export const NavHeader = ({ onOpenCart }) => {
                 className="button-primary"
                 style={{ padding: '7px 18px', fontSize: 14, height: 36 }}
               >
-                Sign In
+                {t('sign_in')}
               </Link>
             )}
 
@@ -500,7 +475,7 @@ export const NavHeader = ({ onOpenCart }) => {
                 }}
               >
                 <ShoppingBag size={15} />
-                <span>Bag ({cartCount})</span>
+                <span>{t('your_bag')} ({cartCount})</span>
               </motion.button>
             )}
           </div>

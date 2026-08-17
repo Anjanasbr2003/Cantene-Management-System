@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { Tabs, Button, Table, Modal, Form, Input, Select, Switch, message, Spin } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { Tabs, Button, Table, Modal, Form, Input, Select, Switch, message, Spin, Popconfirm, Tooltip } from 'antd';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -14,7 +15,8 @@ import {
   Sparkles,
   ShieldCheck,
   RefreshCw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Trash2
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, BarChart, Bar, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,11 +24,14 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { playSuccessChime } from '../utils/audio';
 import { defaultSeedMenuItems } from '../utils/mockMenuData';
+import { addLocalMenuItem, removeLocalMenuItem } from '../store/menuSlice';
 
 const springTransition = { type: 'spring', bounce: 0, duration: 0.35 };
 
 export const AdminDashboard = () => {
   const { token, user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [metrics, setMetrics] = useState(null);
   const [menuItems, setMenuItems] = useState(defaultSeedMenuItems);
@@ -68,7 +73,7 @@ export const AdminDashboard = () => {
       const dataMenu = await resMenu.json();
 
       if (dataDash.success) setMetrics(dataDash.data);
-      if (dataMenu.success && dataMenu.data?.length > 0) setMenuItems(dataMenu.data);
+      if (dataMenu.success && Array.isArray(dataMenu.data)) setMenuItems(dataMenu.data);
     } catch {
       // Retain fallback data
     }
@@ -78,7 +83,7 @@ export const AdminDashboard = () => {
     loadData();
   }, [token]);
 
-  const handleCreateMenuItem = (values) => {
+  const handleCreateMenuItem = async (values) => {
     const newItem = {
       id: 'menu_' + Date.now(),
       name: values.name,
@@ -92,11 +97,52 @@ export const AdminDashboard = () => {
       reviewCount: 0
     };
 
-    setMenuItems([newItem, ...menuItems]);
+    try {
+      if (token) {
+        await fetch('/api/menu', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(newItem)
+        });
+      }
+    } catch (err) {
+      console.error('Save menu item error:', err);
+    }
+
+    setMenuItems(prev => [newItem, ...prev]);
+    dispatch(addLocalMenuItem(newItem));
     playSuccessChime();
     message.success(`Created new menu item: ${newItem.name}`);
     setCreateMenuModalOpen(false);
     form.resetFields();
+  };
+
+  const handleDeleteMenuItem = async (item) => {
+    try {
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(`/api/menu/${item.id}`, {
+        method: 'DELETE',
+        headers
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        message.error(data.message || 'Failed to remove menu item from server');
+        return;
+      }
+    } catch (err) {
+      console.error('Delete menu item error:', err);
+    }
+
+    setMenuItems(prev => prev.filter(i => i.id !== item.id));
+    dispatch(removeLocalMenuItem(item.id));
+    playSuccessChime();
+    message.success(`Removed "${item.name}" from catalogue`);
   };
 
   const exportPDFReport = () => {
@@ -160,28 +206,28 @@ export const AdminDashboard = () => {
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 12px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(0, 102, 204, 0.08)', color: 'var(--color-primary)', fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 <ShieldCheck size={14} />
-                <span>Canteen Executive Control & Analytics</span>
+                <span>{t('admin_badge')}</span>
               </div>
               <h1 className="display-lg" style={{ color: 'var(--color-ink)', marginBottom: 8 }}>
-                Operations Dashboard
+                {t('admin_title')}
               </h1>
               <p style={{ fontSize: 17, color: 'var(--color-ink-muted-80)' }}>
-                Real-time financial telemetry, menu management, and canteen data exports.
+                {t('admin_desc')}
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button onClick={exportPDFReport} className="button-pearl-capsule" style={{ fontSize: 14 }}>
                 <Download size={14} />
-                <span>Export PDF Report</span>
+                <span>{t('export_pdf')}</span>
               </button>
               <button onClick={exportExcelData} className="button-pearl-capsule" style={{ fontSize: 14 }}>
                 <FileText size={14} />
-                <span>Export Excel</span>
+                <span>{t('export_excel')}</span>
               </button>
               <button onClick={() => setCreateMenuModalOpen(true)} className="button-primary" style={{ fontSize: 14 }}>
                 <Plus size={16} />
-                <span>Add Menu Item</span>
+                <span>{t('add_dish')}</span>
               </button>
             </div>
           </div>
@@ -195,7 +241,7 @@ export const AdminDashboard = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
           
           <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Daily Gross Revenue</div>
+            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>{t('daily_gross_revenue')}</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               ${currentMetrics.totalRevenue?.toFixed(2)}
             </div>
@@ -205,7 +251,7 @@ export const AdminDashboard = () => {
           </div>
 
           <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Total Orders Placed</div>
+            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>{t('total_orders_placed')}</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.totalOrders}
             </div>
@@ -215,7 +261,7 @@ export const AdminDashboard = () => {
           </div>
 
           <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Active Diners</div>
+            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>{t('active_diners')}</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.activeCustomers}
             </div>
@@ -225,7 +271,7 @@ export const AdminDashboard = () => {
           </div>
 
           <div className="store-utility-card" style={{ backgroundColor: 'var(--color-surface-pearl)', backdropFilter: 'blur(16px)', border: '1px solid var(--color-hairline)', padding: 24 }}>
-            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>Avg Kitchen Prep Speed</div>
+            <div style={{ fontSize: 13, color: 'var(--color-ink-muted-48)', marginBottom: 4 }}>{t('avg_prep_speed')}</div>
             <div style={{ fontSize: 32, fontWeight: 600, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
               {currentMetrics.avgPrepTimeMinutes}m
             </div>
@@ -302,6 +348,7 @@ export const AdminDashboard = () => {
                   <th style={{ padding: '12px 16px' }}>Price</th>
                   <th style={{ padding: '12px 16px' }}>Dietary</th>
                   <th style={{ padding: '12px 16px' }}>Availability</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,6 +372,34 @@ export const AdminDashboard = () => {
                       <span className={`chip ${item.isAvailable ? 'chip-green' : 'chip-rose'}`}>
                         {item.isAvailable ? 'Available' : 'Unavailable'}
                       </span>
+                    </td>
+                    <td style={{ padding: '16px', textAlign: 'right' }}>
+                      <Popconfirm
+                        title="Remove Dish"
+                        description={`Are you sure you want to remove "${item.name}" from the menu?`}
+                        onConfirm={() => handleDeleteMenuItem(item)}
+                        okText="Yes, Remove"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <button
+                          type="button"
+                          className="button-pearl-capsule"
+                          style={{
+                            padding: '6px 10px',
+                            color: 'var(--color-danger)',
+                            borderColor: 'rgba(255, 69, 58, 0.25)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            fontSize: 12,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Remove</span>
+                        </button>
+                      </Popconfirm>
                     </td>
                   </tr>
                 ))}

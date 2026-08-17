@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Spin, message } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Sparkles, ArrowRight, ShoppingBag, Utensils, QrCode } from 'lucide-react';
@@ -18,6 +19,7 @@ export const CustomerMenu = () => {
   const { items: cartItems, totalAmount, tableNumber, orderType } = useSelector((s) => s.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [customizingItem, setCustomizingItem] = useState(null);
 
@@ -31,10 +33,16 @@ export const CustomerMenu = () => {
     }
   }, [dispatch, searchParams]);
 
-  const categories = ['All', 'Beverages', 'Breakfast', 'Meals', 'Snacks'];
+  const categories = [
+    { key: 'All', label: t('all') },
+    { key: 'Beverages', label: t('beverages') },
+    { key: 'Breakfast', label: t('breakfast') },
+    { key: 'Meals', label: t('meals') },
+    { key: 'Snacks', label: t('snacks') }
+  ];
   const dietaryOptions = ['All', 'Veg', 'Vegan', 'Keto', 'Non-Veg', 'Gluten-Free'];
 
-  const menuList = (items && items.length > 0) ? items : defaultSeedMenuItems;
+  const menuList = items || defaultSeedMenuItems;
 
   const filtered = menuList.filter((item) => {
     const catOk = selectedCategory === 'All' || (item.category && item.category.toLowerCase() === selectedCategory.toLowerCase());
@@ -71,7 +79,7 @@ export const CustomerMenu = () => {
   return (
     <div style={{ backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', paddingBottom: totalCartCount > 0 ? 90 : 40 }}>
       
-      {/* 1. Full-Bleed Light Hero Product Tile (Canvas #ffffff) with Custom Generated Feast Art */}
+      {/* 1. Full-Bleed Light Hero Product Tile with Custom Generated Feast Art */}
       <section className="product-tile-light" style={{ padding: '64px 24px 72px 24px' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -82,21 +90,21 @@ export const CustomerMenu = () => {
           {tableNumber && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(0, 102, 204, 0.1)', color: 'var(--color-primary)', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
               <QrCode size={14} />
-              <span>Dine-In Session Active: Table {tableNumber}</span>
+              <span>{t('hero_badge')} {tableNumber}</span>
             </div>
           )}
 
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-primary)', letterSpacing: '-0.224px', marginBottom: 10 }}>
-            Canteen Management System
+            {t('app_title')}
           </span>
 
           <h1 className="hero-display" style={{ color: 'var(--color-ink)', marginBottom: 14, textAlign: 'center' }}>
-            Reverent Culinary Craft.<br />
-            <span style={{ color: 'var(--color-ink-muted-80)' }}>Engineered for absolute freshness.</span>
+            {t('hero_title_1')}<br />
+            <span style={{ color: 'var(--color-ink-muted-80)' }}>{t('hero_title_2')}</span>
           </h1>
 
           <p className="lead-text" style={{ color: 'var(--color-ink-muted-80)', marginBottom: 32, textAlign: 'center', maxWidth: 640 }}>
-            Organic farm-to-table preparations served directly to your table with live kitchen tracking.
+            {t('hero_subtitle')}
           </p>
 
           {/* Action CTAs: Action Blue Pill + Secondary Pill */}
@@ -107,7 +115,7 @@ export const CustomerMenu = () => {
                 onClick={() => handleQuickAdd(heroLightItem)}
                 className="button-primary"
               >
-                Order Direct (${heroLightItem.price?.toFixed(2)})
+                {t('order_direct')} (${heroLightItem.price?.toFixed(2)})
               </motion.button>
             )}
             {heroLightItem && (
@@ -116,7 +124,7 @@ export const CustomerMenu = () => {
                 onClick={() => setCustomizingItem(heroLightItem)}
                 className="button-secondary-pill"
               >
-                Customize Recipe
+                {t('customize_recipe')}
               </motion.button>
             )}
           </div>
@@ -158,76 +166,16 @@ export const CustomerMenu = () => {
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)'
             }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-ink)' }}>Artisanal Canteen Tasting Selection</div>
-                <div style={{ fontSize: 13, color: 'var(--color-ink-muted-80)' }}>Nitrogen Nitro Cold Brew · Truffle Tagliatelle · Avocado Toast</div>
+                <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--color-ink)' }}>{t('tasting_selection')}</div>
+                <div style={{ fontSize: 13, color: 'var(--color-ink-muted-80)' }}>{t('tasting_sub')}</div>
               </div>
               <button onClick={() => navigate('/tables')} className="button-pearl-capsule" style={{ fontSize: 13 }}>
-                Check Tables →
+                {t('check_tables')}
               </button>
             </div>
           </motion.div>
         </motion.div>
       </section>
-
-      {/* 2. Full-Bleed Dark Hero Product Tile (Surface Tile 1 #272729) with Dark Wagyu Asset */}
-      {heroDarkItem && (
-        <section className="product-tile-dark" style={{ padding: '80px 24px' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={springTransition}
-            style={{ maxWidth: 840, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-          >
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 'var(--r-pill)', backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'var(--color-primary-on-dark)', fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
-              <Sparkles size={13} />
-              <span>Chef's Special Reserve</span>
-            </div>
-
-            <h2 className="display-lg" style={{ color: 'var(--color-body-on-dark)', marginBottom: 14, textAlign: 'center' }}>
-              Culinary precision meets instant dining.
-            </h2>
-
-            <p className="lead-text" style={{ color: 'var(--color-body-muted)', marginBottom: 28, textAlign: 'center' }}>
-              {heroDarkItem.description || 'Nutrient-optimized balanced meal engineered for peak daily energy.'}
-            </p>
-
-            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 44 }}>
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={() => handleQuickAdd(heroDarkItem)}
-                className="button-primary"
-              >
-                Add to Bag (${heroDarkItem.price?.toFixed(2)})
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={() => setCustomizingItem(heroDarkItem)}
-                className="button-secondary-pill"
-                style={{ borderColor: 'var(--color-primary-on-dark)', color: 'var(--color-primary-on-dark)' }}
-              >
-                Inspect Ingredients
-              </motion.button>
-            </div>
-
-            <div style={{ position: 'relative', width: '100%', maxWidth: 720 }}>
-              <img
-                src="/canteen_dark_hero.jpg"
-                alt="Cyber Wagyu Reserve"
-                onError={(e) => { e.currentTarget.src = heroDarkItem.image; }}
-                className="product-image-surface"
-                style={{
-                  width: '100%',
-                  maxHeight: 400,
-                  objectFit: 'cover',
-                  borderRadius: 'var(--r-lg)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)'
-                }}
-              />
-            </div>
-          </motion.div>
-        </section>
-      )}
 
       {/* 3. Parchment Transition Section: Search & Category Filter Strip */}
       <section style={{ backgroundColor: 'var(--color-canvas-parchment)', padding: '48px 24px 32px 24px', borderTop: '1px solid var(--color-hairline)', borderBottom: '1px solid var(--color-hairline)' }}>
@@ -236,10 +184,10 @@ export const CustomerMenu = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
             <div>
               <h2 className="display-md" style={{ color: 'var(--color-ink)', marginBottom: 4 }}>
-                Explore Full Canteen Gallery
+                {t('gallery_title')}
               </h2>
               <p style={{ fontSize: 14, color: 'var(--color-ink-muted-80)' }}>
-                Filter by meal category, macro balance, or dietary requirements
+                {t('gallery_desc')}
               </p>
             </div>
 
@@ -249,7 +197,7 @@ export const CustomerMenu = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => dispatch(setSearchQuery(e.target.value))}
-                placeholder="Search menu & ingredients..."
+                placeholder={t('search_placeholder')}
                 className="search-input-apple"
                 style={{ paddingLeft: 44 }}
               />
@@ -260,14 +208,14 @@ export const CustomerMenu = () => {
           {/* Category Chips */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-ink-muted-48)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>
-              Category:
+              {t('category')}
             </span>
             {categories.map((cat) => {
-              const active = selectedCategory.toLowerCase() === cat.toLowerCase();
+              const active = selectedCategory.toLowerCase() === cat.key.toLowerCase();
               return (
                 <button
-                  key={cat}
-                  onClick={() => dispatch(setCategory(cat))}
+                  key={cat.key}
+                  onClick={() => dispatch(setCategory(cat.key))}
                   className={active ? 'button-dark-utility' : 'button-pearl-capsule'}
                   style={{
                     borderRadius: 'var(--r-pill)',
@@ -276,7 +224,7 @@ export const CustomerMenu = () => {
                     fontWeight: active ? 600 : 400
                   }}
                 >
-                  {cat}
+                  {cat.label}
                 </button>
               );
             })}
@@ -285,7 +233,7 @@ export const CustomerMenu = () => {
           {/* Dietary Chips */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--color-hairline)' }}>
             <Filter size={14} color="var(--color-ink-muted-48)" />
-            <span style={{ fontSize: 12, color: 'var(--color-ink-muted-48)', marginRight: 4 }}>Dietary:</span>
+            <span style={{ fontSize: 12, color: 'var(--color-ink-muted-48)', marginRight: 4 }}>{t('dietary')}</span>
             {dietaryOptions.map((diet) => {
               const active = selectedDietary.toLowerCase() === diet.toLowerCase();
               return (

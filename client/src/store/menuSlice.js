@@ -7,7 +7,7 @@ export const fetchMenuItems = createAsyncThunk('menu/fetchMenuItems', async (par
     const res = await fetch(`/api/menu?${query}`);
     if (!res.ok) throw new Error('Failed to fetch menu items');
     const data = await res.json();
-    return (data.data && data.data.length > 0) ? data.data : defaultSeedMenuItems;
+    return Array.isArray(data.data) ? data.data : defaultSeedMenuItems;
   } catch (err) {
     // Return fallback seed menu items if server is offline/starting
     return defaultSeedMenuItems;
@@ -48,6 +48,13 @@ const menuSlice = createSlice({
         item.isHappyHourDiscount = isHappyHourDiscount;
         if (discountPercent !== undefined) item.discountPercent = discountPercent;
       }
+    },
+    addLocalMenuItem: (state, action) => {
+      state.items.unshift(action.payload);
+    },
+    removeLocalMenuItem: (state, action) => {
+      const id = action.payload;
+      state.items = state.items.filter(i => i.id !== id);
     }
   },
   extraReducers: (builder) => {
@@ -57,7 +64,7 @@ const menuSlice = createSlice({
       })
       .addCase(fetchMenuItems.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload && action.payload.length > 0) {
+        if (Array.isArray(action.payload)) {
           state.items = action.payload;
         }
       })
@@ -68,5 +75,13 @@ const menuSlice = createSlice({
   }
 });
 
-export const { setCategory, setDietary, setSearchQuery, toggleLocalAvailability, toggleLocalHappyHour } = menuSlice.actions;
+export const { 
+  setCategory, 
+  setDietary, 
+  setSearchQuery, 
+  toggleLocalAvailability, 
+  toggleLocalHappyHour,
+  addLocalMenuItem,
+  removeLocalMenuItem
+} = menuSlice.actions;
 export default menuSlice.reducer;

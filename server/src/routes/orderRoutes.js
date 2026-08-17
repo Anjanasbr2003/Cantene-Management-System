@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const mockStore = require('../utils/mockStore');
-const { verifyToken, authorizeRoles } = require('../middleware/auth');
+const { verifyToken, optionalVerifyToken, authorizeRoles } = require('../middleware/auth');
+
 const { pool } = require('../config/db');
 
 // Get Orders (All for Admin/Staff, User-filtered for Customer) from MySQL or Mock
-router.get('/', async (req, res) => {
+router.get('/', optionalVerifyToken, async (req, res) => {
+
   let orders = [];
 
   try {
@@ -36,6 +38,7 @@ router.get('/', async (req, res) => {
             menuItemId: i.menu_item_id,
             name: i.name,
             selectedSize: i.selected_size,
+            selectedAddOns: [],
             price: Number(i.price),
             quantity: i.quantity,
             specialInstructions: i.special_instructions
@@ -99,6 +102,7 @@ router.get('/:id', async (req, res) => {
           menuItemId: i.menu_item_id,
           name: i.name,
           selectedSize: i.selected_size,
+          selectedAddOns: [],
           price: Number(i.price),
           quantity: i.quantity,
           specialInstructions: i.special_instructions

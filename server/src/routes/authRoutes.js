@@ -6,50 +6,13 @@ const mockStore = require('../utils/mockStore');
 const { verifyToken } = require('../middleware/auth');
 const { pool } = require('../config/db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'antigravity_sci_fi_canteen_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set.');
+
 
 // Sign in
 router.post('/login', async (req, res) => {
-  const { email, password, roleDemo } = req.body;
-
-  // 1-Click Role Demo Switcher Support
-  if (roleDemo) {
-    let targetUser = null;
-    try {
-      const [dbUsers] = await pool.query('SELECT * FROM users WHERE role = ? LIMIT 1', [roleDemo]);
-      if (dbUsers.length > 0) {
-        const u = dbUsers[0];
-        targetUser = {
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          avatar: u.avatar,
-          loyaltyPoints: u.loyalty_points || 0,
-          phone: u.phone
-        };
-      }
-    } catch {
-      // Fallback
-    }
-
-    if (!targetUser) {
-      targetUser = mockStore.users.find(u => u.role === roleDemo);
-    }
-
-    if (targetUser) {
-      const token = jwt.sign(
-        { id: targetUser.id, email: targetUser.email, role: targetUser.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-      return res.json({
-        success: true,
-        token,
-        user: targetUser
-      });
-    }
-  }
+  const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password required.' });
@@ -83,8 +46,8 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
-  // Password check (or fallback for demo)
-  const isMatch = password === 'admin123' || password === 'staff123' || password === 'customer123' || bcrypt.compareSync(password, user.passwordHash || '');
+  // Verify password via bcrypt
+  const isMatch = user.passwordHash && bcrypt.compareSync(password, user.passwordHash);
   if (!isMatch) {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }

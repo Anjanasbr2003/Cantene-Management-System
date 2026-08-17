@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const AppleFooter = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="footer-apple">
       <div className="apple-container-wide">
@@ -29,20 +32,20 @@ export const AppleFooter = () => {
           {/* Col 1 */}
           <div>
             <div className="caption-strong" style={{ color: 'var(--color-ink)', marginBottom: 12 }}>
-              Canteen & Menu
+              {t('footer_col_menu')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <Link to="/menu" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Daily Fresh Menu
+                {t('nav_menu')}
               </Link>
               <Link to="/tables" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Table QR & Status
+                {t('nav_tables')}
               </Link>
               <Link to="/orders" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Live Order Radar
+                {t('nav_orders')}
               </Link>
               <Link to="/menu" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Dietary & Allergen Map
+                {t('tasting_selection')}
               </Link>
             </div>
           </div>
@@ -50,20 +53,20 @@ export const AppleFooter = () => {
           {/* Col 2 */}
           <div>
             <div className="caption-strong" style={{ color: 'var(--color-ink)', marginBottom: 12 }}>
-              Account & Credentials
+              {t('footer_col_account')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <Link to="/login" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Sign In to System
+                {t('sign_in')}
               </Link>
               <Link to="/register" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Create Diner Account
+                {t('register')}
               </Link>
               <Link to="/login" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Claim 50 Pts Bonus
+                Bonus Rewards
               </Link>
               <Link to="/orders" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Loyalty Point Balance
+                Orbit Loyalty Status
               </Link>
             </div>
           </div>
@@ -71,17 +74,17 @@ export const AppleFooter = () => {
           {/* Col 3 */}
           <div>
             <div className="caption-strong" style={{ color: 'var(--color-ink)', marginBottom: 12 }}>
-              Staff & Operations
+              {t('footer_col_staff')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <Link to="/staff" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Kitchen Display System
+                {t('nav_staff')}
               </Link>
               <Link to="/admin" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Executive Analytics
+                {t('nav_admin')}
               </Link>
               <Link to="/admin" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
-                Inventory Valuation
+                {t('tab_inventory')}
               </Link>
               <Link to="/admin" className="dense-link" style={{ color: 'var(--color-ink-muted-80)', textDecoration: 'none' }}>
                 Supplier Lead Times
@@ -92,7 +95,7 @@ export const AppleFooter = () => {
           {/* Col 4 */}
           <div>
             <div className="caption-strong" style={{ color: 'var(--color-ink)', marginBottom: 12 }}>
-              Values & Sustainability
+              {t('footer_col_values')}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span className="dense-link" style={{ color: 'var(--color-ink-muted-80)' }}>
@@ -124,14 +127,14 @@ export const AppleFooter = () => {
           }}
         >
           <div className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>
-            Copyright © 2026 Canteen Management System. All rights reserved. Photography-first Museum Gallery Interface.
+            {t('footer_copyright')}
           </div>
 
           <div style={{ display: 'flex', gap: 20 }}>
-            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>Privacy Policy</span>
-            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>Terms of Service</span>
-            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>Food Safety Standards</span>
-            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>System Status</span>
+            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>{t('privacy_policy')}</span>
+            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>{t('terms_of_service')}</span>
+            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>{t('food_safety')}</span>
+            <span className="fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>{t('system_status')}</span>
           </div>
         </div>
 
